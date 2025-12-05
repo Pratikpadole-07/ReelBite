@@ -1,0 +1,120 @@
+/* Black Reel Experience */
+.reel-page {
+  background: #000;
+  min-height: 100vh;
+  padding: 80px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 90px;
+}
+
+/* 1 Reel Row = Video + Info */
+.reel-row {
+  width: 80%;
+  max-width: 1000px;
+  display: flex;
+  justify-content: center;
+  gap: 50px;
+}
+
+/* Video Box */
+.reel-box {
+  width: 360px;
+  height: 640px;
+  background: #111;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.reel-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Right Panel */
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 640px;
+  width: 250px;
+}
+
+/* Actions */
+.action-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.action-group button {
+  font-size: 28px;
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+}
+
+.action-group span {
+  color: #bbb;
+  font-size: 14px;
+}
+
+/* Food Info */
+.food-info {
+  background: #111;
+  color: #fff;
+  padding: 14px;
+  border-radius: 12px;
+}
+
+.food-info h3 {
+  font-size: 16px;
+  margin-bottom: 6px;
+}
+
+.desc {
+  font-size: 13px;
+  opacity: 0.85;
+  margin-bottom: 6px;
+}
+
+.price {
+  font-size: 15px;
+  font-weight: bold;
+  color: #ffd700;
+  margin-bottom: 6px;
+}
+
+.loc {
+  opacity: 0.8;
+  margin-bottom: 10px;
+}
+
+/* Order Button */
+.order-btn {
+  display: inline-block;
+  background: #ffb300;
+  color: black;
+  padding: 6px 10px;
+  font-weight: bold;
+  border-radius: 6px;
+  text-decoration: none;
+}
+
+/* Mobile – Put info below video */
+@media (max-width: 768px) {
+  .reel-row {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .right-panel {
+    height: auto;
+    width: 90%;
+    gap: 20px;
+  }
+}

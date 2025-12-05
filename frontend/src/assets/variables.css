@@ -1,0 +1,41 @@
+:root {
+  /* Light theme variables */
+  --bg-color: #ffffff;
+  --text-color: #333333;
+  --primary-color: #ff6b35; /* Warm orange for food theme */
+  --secondary-color: #6c757d;
+  --accent-color: #4caf50; /* Green for freshness */
+  --input-bg: #f8f9fa;
+  --input-border: #ced4da;
+  --button-bg: linear-gradient(135deg, #ff6b35, #f7931e); /* Gradient for buttons */
+  --button-text: #ffffff;
+  --button-hover: linear-gradient(135deg, #e55a2b, #e07e1a);
+  --gradient-bg: linear-gradient(135deg, #ff9a8b, #fecfef, #d299c2); /* Soft gradient background */
+  --card-bg: rgba(255, 255, 255, 0.95);
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  --font-family: 'Poppins', sans-serif; /* Modern font */
+  --font-size: 16px;
+  --border-radius: 12px; /* More rounded */
+  --padding: 12px;
+  --margin: 12px;
+  --transition: all 0.3s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Dark theme variables */
+    --bg-color: #121212;
+    --text-color: #ffffff;
+    --primary-color: #ff8c42; /* Lighter orange for dark mode */
+    --secondary-color: #a9a9a9;
+    --accent-color: #66bb6a; /* Brighter green */
+    --input-bg: #333333;
+    --input-border: #555555;
+    --button-bg: linear-gradient(135deg, #ff8c42, #ffb74d);
+    --button-text: #ffffff;
+    --button-hover: linear-gradient(135deg, #e67e22, #f39c12);
+    --gradient-bg: linear-gradient(135deg, #2c1810, #1a1a2e, #16213e); /* Dark gradient */
+    --card-bg: rgba(33, 33, 33, 0.95);
+    --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+}

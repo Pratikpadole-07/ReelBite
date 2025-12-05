@@ -1,0 +1,24 @@
+.order-links {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+}
+
+.order-btn {
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 2px solid #eee;
+  font-size: 13px;
+  font-weight: 600;
+  background: #fff;
+  transition: .2s ease;
+  text-decoration: none;
+}
+
+.order-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+}
+
+.order-btn.zomato { color:#e23744; border-color:#ffbdc4; }
+.order-btn.swiggy { color:#fc8019; border-color:#ffcfb5; }
