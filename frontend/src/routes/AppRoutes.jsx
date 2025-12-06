@@ -8,7 +8,6 @@ import UserRegister from "../pages/auth/UserRegister";
 import UserLogin from "../pages/auth/UserLogin";
 import FoodPartnerRegister from "../pages/auth/FoodPartnerRegister";
 import FoodPartnerLogin from "../pages/auth/FoodPartnerLogin";
-
 import Home from "../pages/general/Home";
 import Saved from "../pages/general/Saved";
 import TopNav from "../components/TopNav";
@@ -18,6 +17,9 @@ import UserProfile from "../pages/general/UserProfile";
 import Search from "../pages/general/Search";
 import BottomNav from "../components/BottomNav";
 import MyUploads from "../pages/food-partner/MyUploads";
+import EditRestaurant from "../pages/food-partner/EditRestaurant";
+
+
 
 const PrivateRoute = ({ children }) => {
   const { user, foodPartner, loading } = useContext(AuthContext);
@@ -67,6 +69,14 @@ const AppRoutes = () => (
         element={
           <PrivateRoute>
             <MyUploads />
+          </PrivateRoute>
+        }
+      />
+    <Route
+        path="/food-partner/edit"
+        element={
+          <PrivateRoute>
+            <EditRestaurant />
           </PrivateRoute>
         }
       />

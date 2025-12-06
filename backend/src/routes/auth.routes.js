@@ -36,8 +36,12 @@ router.get(
   async (req, res) => {
     try {
       const partner = await foodPartnerModel
-        .findById(req.foodPartner._id)
+        .findById(req.user._id)
         .select("-password");
+
+      if (!partner) {
+        return res.status(404).json({ message: "Not found" });
+      }
 
       res.json({ foodPartner: partner });
     } catch (err) {
@@ -47,6 +51,13 @@ router.get(
   }
 );
 
+
+router.put(
+  "/food-partner/update",
+  authMiddleware.authFoodPartnerMiddleware,
+  upload.single("logo"),
+  authController.updateFoodPartnerProfile
+);
 
 
 module.exports = router;

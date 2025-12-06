@@ -214,6 +214,36 @@ async function getFoodPartnerDetails(req, res) {
   res.json({ foodPartner: partner });
 }
 
+async function updateFoodPartnerProfile(req, res) {
+  try {
+    const { name, phone, address, orderLink } = req.body;
+
+    const updateData = { name, phone, address, orderLinks: { website: orderLink } };
+
+    if (req.file) {
+      const uploadFile = await storageService.uploadFile(req.file.buffer, uuid());
+      updateData.logo = uploadFile.url;
+    }
+
+    const updatedPartner = await foodPartnerModel.findByIdAndUpdate(
+      req.user._id,
+      updateData,
+      { new: true }
+    ).select("-password");
+
+    res.json({
+      success: true,
+      foodPartner: updatedPartner
+    });
+  } catch (err) {
+    console.log("Update Partner Error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
+
+
+
 module.exports = {
   registerUser,
   loginUser,
@@ -222,5 +252,7 @@ module.exports = {
   loginFoodPartner,
   logoutFoodPartner,
   updateUserAvatar,
-  getFoodPartnerDetails
+  getFoodPartnerDetails,
+  updateFoodPartnerProfile
+
 };

@@ -20,7 +20,7 @@ async function createFood(req, res) {
       description: req.body.description,
       price: req.body.price,
       category: req.body.category,
-      foodPartner: req.foodPartner._id, // 🔥 FIXED
+      foodPartner: req.user._id,  // ✔ FIXED
       video: uploadResult.url
     });
 
@@ -150,10 +150,10 @@ async function getSaveFood(req, res) {
   res.status(200).json({ savedFoods });
 }
 
-// ====================== MY UPLOADS (Partner) ======================
+// ====================== MY UPLOADS ======================
 async function getMyUploads(req, res) {
   try {
-    const foods = await foodModel.find({ foodPartner: req.foodPartner._id }) // 🔥 FIXED
+    const foods = await foodModel.find({ foodPartner: req.user._id }) // ✔ FIXED
       .populate("foodPartner", "name")
       .sort({ createdAt: -1 });
 
@@ -180,7 +180,7 @@ async function updateFood(req, res) {
   }
 
   const updated = await foodModel.findOneAndUpdate(
-    { _id: req.params.id, foodPartner: req.foodPartner._id },
+    { _id: req.params.id, foodPartner: req.user._id }, // ✔ FIXED
     updateData,
     { new: true }
   );
@@ -194,7 +194,7 @@ async function updateFood(req, res) {
 async function deleteFood(req, res) {
   const deleted = await foodModel.findOneAndDelete({
     _id: req.params.id,
-    foodPartner: req.foodPartner._id,
+    foodPartner: req.user._id, // ✔ FIXED
   });
 
   if (!deleted) return res.status(404).json({ message: "Not allowed or not found" });

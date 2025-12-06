@@ -61,6 +61,13 @@ const FoodPartnerPage = () => {
         >
           ➕ Add New Reel
         </button>
+        <button
+            className="my-upload-btn"
+            onClick={() => navigate("/food-partner/edit")}
+        >
+            ✏️ Edit Profile
+        </button>
+
       </header>
 
       {/* REELS SECTION */}
