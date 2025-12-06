@@ -1,6 +1,6 @@
 // src/routes/AppRoutes.jsx
 import React, { useContext } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 
 import ChooseRegister from "../pages/auth/ChooseRegister";
@@ -12,84 +12,69 @@ import FoodPartnerLogin from "../pages/auth/FoodPartnerLogin";
 import Home from "../pages/general/Home";
 import Saved from "../pages/general/Saved";
 import TopNav from "../components/TopNav";
-import CreateFood from "../pages/food-partner/createFood";
-import Profile from "../pages/food-partner/Profile";
+import CreateFood from "../pages/food-partner/CreateFood";
+import Profile from "../pages/food-partner/RestaurantProfile";
 import UserProfile from "../pages/general/UserProfile";
 import Search from "../pages/general/Search";
-import BottomNav from "../components/BottomNav"
-
+import BottomNav from "../components/BottomNav";
+import MyUploads from "../pages/food-partner/MyUploads";
 
 const PrivateRoute = ({ children }) => {
-  const { user, loading } = useContext(AuthContext);
+  const { user, foodPartner, loading } = useContext(AuthContext);
+  const location = useLocation();
 
   if (loading) return <h3>Loading...</h3>;
-  return user ? children : <Navigate to="/user/login" replace />;
+
+  const isPartnerRoute = location.pathname.startsWith("/food-partner");
+
+  if (!user && !foodPartner) {
+    return <Navigate to={isPartnerRoute ? "/food-partner/login" : "/user/login"} replace />;
+  }
+
+  return children;
 };
 
 const AppRoutes = () => (
   <Router>
     <Routes>
+      {/* Public Routes */}
       <Route path="/register" element={<ChooseRegister />} />
       <Route path="/user/register" element={<UserRegister />} />
       <Route path="/user/login" element={<UserLogin />} />
+      <Route path="/food-partner/register" element={<FoodPartnerRegister />} />
+      <Route path="/food-partner/login" element={<FoodPartnerLogin />} />
+
+      {/* Protected Routes */}
+      <Route path="/" element={<PrivateRoute><><TopNav /><Home /></></PrivateRoute>} />
+      <Route path="/saved" element={<PrivateRoute><><TopNav /><Saved /></></PrivateRoute>} />
 
       <Route
-        path="/"
+        path="/food-partner/create-food"
         element={
           <PrivateRoute>
-            <>
-             <TopNav />
-              <Home />
-              
-            </>
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/saved"
-        element={
-          <PrivateRoute>
-            <>
-             <TopNav />
-              <Saved />
-              
-            </>
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/create-food"
-        element={
-          <PrivateRoute>
-             <TopNav />
             <CreateFood />
           </PrivateRoute>
         }
       />
 
+
+      <Route path="/food-partner/:id" element={<PrivateRoute><><TopNav /><Profile /></></PrivateRoute>} />
+
+      <Route path="/profile" element={<PrivateRoute><><UserProfile /></></PrivateRoute>} />
+
       <Route
-        path="/food-partner/:id"
+        path="/food-partner/my-uploads"
         element={
           <PrivateRoute>
-             <TopNav />
-            <Profile />
+            <MyUploads />
           </PrivateRoute>
         }
       />
-    <Route
-        path="/profile"
-        element={
-            <PrivateRoute>
-            <UserProfile />
-            </PrivateRoute>
-        }
-        />
-      <Route path="*" element={<Navigate to="/" replace />} />
-      <Route path="/search" element={<><Search /><BottomNav /></>}
-/>
 
+
+      <Route path="/search" element={<><Search /><BottomNav /></>} />
+
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   </Router>
 );

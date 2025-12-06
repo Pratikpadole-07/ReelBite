@@ -1,29 +1,35 @@
-//create server
-const express=require('express');
+const express = require('express');
 const path = require('path');
-const cookieParser=require('cookie-parser');
-const authRoutes=require('./routes/auth.routes')
-const foodRoutes=require('./routes/food.routes')
+const cookieParser = require('cookie-parser');
+const authRoutes = require('./routes/auth.routes');
+const foodRoutes = require('./routes/food.routes');
 const foodPartnerRoutes = require('./routes/food-partner.routes');
-const app=express();
-const cors=require('cors');
+const cors = require('cors');
 
-app.use(cookieParser());
-app.use(express.json());
+const app = express();
+
+// CORS FIRST
 app.use(cors({
-    origin:'http://localhost:5173',
-    credentials:true
+    origin: 'http://localhost:5173',
+    credentials: true
 }));
 
+// COOKIE PARSER BEFORE ROUTES
+app.use(cookieParser());
+
+// JSON PARSER
+app.use(express.json());
+
+// STATIC FILES
 app.use('/vdeos', express.static(path.join(__dirname, '../../vdeos')));
 
-app.get("/",(req,res)=>{
+app.get("/", (req, res) => {
     res.send("Hello world");
-})
+});
 
-app.use('/api/auth',authRoutes);
-app.use('/api/food',foodRoutes);
-app.use('/api/food-partner',foodPartnerRoutes);
+// ROUTES
+app.use('/api/auth', authRoutes);
+app.use('/api/food', foodRoutes);
+app.use('/api/food-partner', foodPartnerRoutes);
 
-
-module.exports=app;
+module.exports = app;

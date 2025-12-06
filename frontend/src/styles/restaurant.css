@@ -1,24 +1,109 @@
-.order-links {
-  margin-top: 10px;
+/* PAGE */
+.restaurant-page {
+  background: #000;
+  min-height: 100vh;
+  padding: 80px 20px;
+  color: #fff;
   display: flex;
-  gap: 10px;
+  flex-direction: column;
+  align-items: center;
 }
 
-.order-btn {
-  padding: 7px 12px;
-  border-radius: 8px;
-  border: 2px solid #eee;
-  font-size: 13px;
-  font-weight: 600;
-  background: #fff;
-  transition: .2s ease;
-  text-decoration: none;
+/* HEADER */
+.restaurant-header {
+  width: 90%;
+  max-width: 900px;
+  background: rgba(20, 20, 20, 0.85);
+  padding: 20px 22px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.05);
 }
 
-.order-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+/* Avatar */
+.restaurant-avatar {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #ffa500;
 }
 
-.order-btn.zomato { color:#e23744; border-color:#ffbdc4; }
-.order-btn.swiggy { color:#fc8019; border-color:#ffcfb5; }
+/* Text */
+.restaurant-details {
+  flex: 1;
+}
+
+.restaurant-details h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.restaurant-details p {
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+/* Upload Button */
+.my-upload-btn {
+  background: linear-gradient(45deg, #ffb300, #ff8700);
+  padding: 10px 15px;
+  border-radius: 10px;
+  border: none;
+  color: black;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.my-upload-btn:hover {
+  transform: scale(1.08);
+  background: linear-gradient(45deg, #ff9900, #ff6a00);
+}
+
+/* Section Title */
+.reels-head {
+  width: 90%;
+  margin-top: 25px;
+  font-size: 18px;
+  font-weight: 700;
+  border-left: 4px solid #ffa500;
+  padding-left: 10px;
+}
+
+/* No Uploads Message */
+.no-uploads {
+  margin-top: 30px;
+  opacity: 0.6;
+  font-size: 16px;
+}
+
+/* MOBILE OPTIMIZATION */
+@media(max-width: 768px) {
+  .restaurant-header {
+    flex-direction: column;
+    text-align: center;
+    padding: 16px;
+  }
+
+  .restaurant-avatar {
+    width: 80px;
+    height: 80px;
+  }
+
+  .my-upload-btn {
+    width: 100%;
+  }
+
+  .reels-head {
+    text-align: center;
+    border-left: none;
+    border-bottom: 3px solid #ffa500;
+    padding-bottom: 6px;
+  }
+}

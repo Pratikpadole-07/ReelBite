@@ -1,49 +1,79 @@
-// src/context/AuthContext.jsx
 import { createContext, useEffect, useState } from "react";
-import axios from "axios";
+import api from "../assets/api/api";
 
 export const AuthContext = createContext();
 
-const API_URL = "http://localhost:3000/api/auth";
-
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [foodPartner, setFoodPartner] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchUser = async () => {
+  // 🟦 Auto detect current auth (Cookie-based)
+  const fetchAuth = async () => {
     try {
-      const res = await axios.get(`${API_URL}/user/me`, {
-        withCredentials: true,
-      });
-      setUser(res.data.user);
-    } catch {
+      const resPartner = await api.get("/auth/food-partner/me");
+      setFoodPartner(resPartner.data.foodPartner);
       setUser(null);
-    } finally {
-      setLoading(false);
+    } catch {
+      try {
+        const resUser = await api.get("/auth/user/me");
+        setUser(resUser.data.user);
+        setFoodPartner(null);
+      } catch {
+        setUser(null);
+        setFoodPartner(null);
+      }
     }
+    setLoading(false);
   };
 
   useEffect(() => {
-    fetchUser();
+    fetchAuth();
   }, []);
 
-  const login = async (email, password) => {
-    const res = await axios.post(
-      `${API_URL}/user/login`,
-      { email, password },
-      { withCredentials: true }
-    );
-    setUser(res.data.user);
+  // 🟩 User login
+  const loginUser = (userData) => {
+    setUser(userData);
+    setFoodPartner(null);
   };
 
-  const logout = async () => {
-    await axios.get(`${API_URL}/user/logout`, { withCredentials: true });
+  // 🟧 Partner login
+  const loginPartner = (partnerData) => {
+    setFoodPartner(partnerData);
     setUser(null);
   };
 
+  // 🔴 Logout
+  const logout = async () => {
+    try {
+      if (foodPartner) await api.post("/auth/food-partner/logout");
+      if (user) await api.post("/auth/logout");
+
+      setUser(null);
+      setFoodPartner(null);
+
+      window.location.href = foodPartner
+        ? "/food-partner/login"
+        : "/user/login";
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
-      {!loading && children}
+    <AuthContext.Provider
+      value={{
+        user,
+        foodPartner,
+        loading,
+        setUser,
+        setFoodPartner,
+        loginUser,
+        loginPartner,
+        logout,
+      }}
+    >
+      {children}
     </AuthContext.Provider>
   );
 };

@@ -1,30 +1,38 @@
-/* Black Reel Experience */
+/* Full Reel Scrolling */
 .reel-page {
   background: #000;
-  min-height: 100vh;
-  padding: 80px 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 90px;
+  height: 100vh;
+  width: 100%;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  padding: 0;
+  margin: 0;
 }
 
-/* 1 Reel Row = Video + Info */
+/* 1 Reel = Full Screen */
 .reel-row {
-  width: 80%;
-  max-width: 1000px;
+  width: 100%;
+  height: 100vh;
   display: flex;
   justify-content: center;
   gap: 50px;
+  scroll-snap-align: start;
+  align-items: center;
+  transition: transform 0.3s ease;
+}
+
+.reel-row:hover {
+  transform: translateY(-6px);
 }
 
 /* Video Box */
 .reel-box {
   width: 360px;
-  height: 640px;
+  height: 100%;
   background: #111;
-  border-radius: 14px;
+  border-radius: 16px;
   overflow: hidden;
+  box-shadow: 0 8px 20px rgba(255, 255, 255, 0.05);
 }
 
 .reel-video {
@@ -33,88 +41,118 @@
   object-fit: cover;
 }
 
-/* Right Panel */
+/* RIGHT SIDE PANEL */
 .right-panel {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  height: 640px;
-  width: 250px;
+  height: 95%;
+  width: 240px;
 }
 
-/* Actions */
+/* Action Buttons */
 .action-group {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18px;
+  gap: 14px;
 }
 
 .action-group button {
   font-size: 28px;
-  background: none;
+  background: rgba(255, 255, 255, 0.12);
   border: none;
-  color: #fff;
+  padding: 12px;
+  border-radius: 50%;
   cursor: pointer;
+  color: #fff;
+  transition: 0.25s ease;
+}
+
+.action-group button:hover {
+  background: #ff3b5c;
+  transform: scale(1.15);
 }
 
 .action-group span {
-  color: #bbb;
+  color: #eee;
   font-size: 14px;
+  font-weight: 600;
 }
 
-/* Food Info */
+/* FOOD INFO CARD */
 .food-info {
-  background: #111;
+  background: rgba(20, 20, 20, 0.9);
   color: #fff;
-  padding: 14px;
-  border-radius: 12px;
+  padding: 16px;
+  border-radius: 14px;
+  backdrop-filter: blur(8px);
 }
 
 .food-info h3 {
-  font-size: 16px;
+  font-size: 17px;
+  font-weight: 700;
   margin-bottom: 6px;
 }
 
 .desc {
   font-size: 13px;
   opacity: 0.85;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .price {
   font-size: 15px;
   font-weight: bold;
-  color: #ffd700;
-  margin-bottom: 6px;
+  color: #19e68c;
+  margin-bottom: 5px;
 }
 
 .loc {
+  font-size: 13px;
   opacity: 0.8;
   margin-bottom: 10px;
 }
 
-/* Order Button */
+/* ORDER NOW BUTTON */
 .order-btn {
   display: inline-block;
   background: #ffb300;
   color: black;
   padding: 6px 10px;
   font-weight: bold;
-  border-radius: 6px;
+  border-radius: 8px;
+  font-size: 14px;
   text-decoration: none;
+  transition: 0.25s ease;
 }
 
-/* Mobile – Put info below video */
+.order-btn:hover {
+  background: #ff9800;
+  transform: scale(1.05);
+}
+
+/* MOBILE Responsive */
 @media (max-width: 768px) {
   .reel-row {
     flex-direction: column;
-    align-items: center;
+    gap: 25px;
+    padding-top: 20px;
   }
 
   .right-panel {
-    height: auto;
     width: 90%;
-    gap: 20px;
+    height: auto;
+    flex-direction: row;
+    justify-content: space-around;
+  }
+
+  .action-group {
+    flex-direction: row;
+    gap: 18px;
+  }
+
+  .food-info {
+    width: 95%;
   }
 }

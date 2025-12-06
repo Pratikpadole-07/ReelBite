@@ -1,50 +1,56 @@
-import React from 'react';
+import React, { useContext, useState } from 'react';
 import '../../styles/auth-shared.css';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { AuthContext } from "../../context/AuthContext";
 
 const FoodPartnerLogin = () => {
-
   const navigate = useNavigate();
+  const { loginPartner } = useContext(AuthContext);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
     const email = e.target.email.value;
     const password = e.target.password.value;
 
-    const response = await axios.post("http://localhost:3000/api/auth/food-partner/login", {
-      email,
-      password
-    }, { withCredentials: true });
+    try {
+      const res = await axios.post(
+        "http://localhost:3000/api/auth/food-partner/login",
+        { email, password },
+        { withCredentials: true }
+      );
 
-    console.log(response.data);
+      loginPartner(res.data.foodPartner); // ⬅ Update global context
 
-    navigate("/create-food"); // Redirect to create food page after login
-
+      navigate(`/food-partner/${res.data.foodPartner._id}`); // ⬅ Redirect to dashboard
+    } catch (err) {
+      setError("Invalid email or password ❌");
+    }
   };
 
   return (
     <div className="auth-page-wrapper">
-      <div className="auth-card" role="region" aria-labelledby="partner-login-title">
-        <header>
-          <h1 id="partner-login-title" className="auth-title">Partner login</h1>
-          <p className="auth-subtitle">Access your dashboard and manage orders.</p>
-        </header>
-        <form className="auth-form" onSubmit={handleSubmit} noValidate>
-          <div className="field-group">
-            <label htmlFor="email">Email</label>
-            <input id="email" name="email" type="email" placeholder="business@example.com" autoComplete="email" />
-          </div>
-          <div className="field-group">
-            <label htmlFor="password">Password</label>
-            <input id="password" name="password" type="password" placeholder="Password" autoComplete="current-password" />
-          </div>
-          <button className="auth-submit" type="submit">Sign In</button>
+      <div className="auth-card">
+        <h2 className="auth-title">Partner Login</h2>
+
+        {error && <p className="error-text">{error}</p>}
+
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <label>Email</label>
+          <input name="email" type="email" required />
+
+          <label>Password</label>
+          <input name="password" type="password" required />
+
+          <button className="auth-submit">Sign In</button>
         </form>
-        <div className="auth-alt-action">
-          New partner? <a href="/food-partner/register">Create an account</a>
-        </div>
+
+        <p className="auth-alt-action">
+          New partner? <a href="/partner/register">Create account</a>
+        </p>
       </div>
     </div>
   );

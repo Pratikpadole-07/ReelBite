@@ -5,20 +5,23 @@ const saveModel = require("../models/save.model");
 const { v4: uuid } = require("uuid");
 const foodPartnerModel = require("../models/foodpartner.model");
 const Comment = require("../models/comment.model");
+
 // ====================== CREATE FOOD ======================
 async function createFood(req, res) {
   try {
-    const fileUploadResult = await storageService.uploadFile(req.file.buffer, uuid());
+    if (!req.file) {
+      return res.status(400).json({ message: "Video file required" });
+    }
+
+    const uploadResult = await storageService.uploadFile(req.file.buffer, uuid());
 
     const foodItem = await foodModel.create({
       name: req.body.name,
       description: req.body.description,
       price: req.body.price,
       category: req.body.category,
-      orderLink: req.body.orderLink,
-      location: req.body.location || "Not Available",
-      foodPartner: req.body.foodPartner,
-      video: fileUploadResult.url,
+      foodPartner: req.foodPartner._id, // 🔥 FIXED
+      video: uploadResult.url
     });
 
     res.status(201).json({
@@ -35,43 +38,38 @@ async function createFood(req, res) {
 // ====================== FETCH FOOD FEED ======================
 async function getFoodItems(req, res) {
   try {
-    const { search = "", category = "All" } = req.query;
-    let query = {};
-
-    // 🔍 Search Filter
-    if (search.trim()) {
-      query.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } }
-      ];
-    }
-
-    // 🍽 Category Filter
-    if (category !== "All") {
-      query.category = category;
-    }
-
-    // ⭐ If want only MY uploads (Food Partner logged-in)
-    if (req.query.myUploads) {
-      query.foodPartner = req.user._id;
-    }
-
-    const foodItems = await foodModel.find(query)
-      .populate("foodPartner", "name address phone city orderLinks")
+    const foodItems = await foodModel.find()
+      .populate("foodPartner", "name address phone city")
       .sort({ createdAt: -1 });
 
-    res.status(200).json({
-      success: true,
-      count: foodItems.length,
-      foodItems,
-    });
-
+    res.status(200).json({ success: true, foodItems });
   } catch (err) {
     console.error("Error fetching food:", err);
     res.status(500).json({ success: false, message: "Server Error" });
   }
 }
 
+// ====================== FOOD PARTNER DETAILS ======================
+async function getFoodPartnerDetails(req, res) {
+  try {
+    const partner = await foodPartnerModel
+      .findById(req.params.id)
+      .select("-password");
+
+    if (!partner) {
+      return res.status(404).json({ message: "Restaurant not found" });
+    }
+
+    const foods = await foodModel.find({ foodPartner: partner._id })
+      .populate("foodPartner", "name address phone city")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ success: true, partner, foods });
+  } catch (err) {
+    console.error("Food partner error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+}
 
 // ====================== LIKE FOOD ======================
 async function likeFood(req, res) {
@@ -83,7 +81,6 @@ async function likeFood(req, res) {
   if (exists) {
     await likeModel.deleteOne({ user: user._id, food: foodId });
     await foodModel.findByIdAndUpdate(foodId, { $inc: { likeCount: -1 } });
-
     return res.status(200).json({ like: false });
   }
 
@@ -103,7 +100,6 @@ async function saveFood(req, res) {
   if (exists) {
     await saveModel.deleteOne({ user: user._id, food: foodId });
     await foodModel.findByIdAndUpdate(foodId, { $inc: { savesCount: -1 } });
-
     return res.status(200).json({ save: false });
   }
 
@@ -113,6 +109,7 @@ async function saveFood(req, res) {
   res.status(200).json({ save: true });
 }
 
+// ====================== COMMENTS ======================
 async function addComment(req, res) {
   try {
     const { foodId, text } = req.body;
@@ -134,13 +131,9 @@ async function addComment(req, res) {
   }
 }
 
-
-// 📌 Get Comments for a Food
 async function getComments(req, res) {
   try {
-    const { foodId } = req.params;
-
-    const comments = await Comment.find({ food: foodId })
+    const comments = await Comment.find({ food: req.params.foodId })
       .populate("user", "name email")
       .sort({ createdAt: -1 });
 
@@ -151,41 +144,27 @@ async function getComments(req, res) {
   }
 }
 
-
-// ====================== FOOD PARTNER DETAILS PAGE ======================
-async function getFoodPartnerDetails(req, res) {
-  try {
-    const partner = await foodPartnerModel.findById(req.params.id).select("-password");
-
-    if (!partner) return res.status(404).json({ message: "Restaurant not found" });
-
-    const foods = await foodModel.find({ foodPartner: req.params.id })
-      .populate("foodPartner", "name address phone city orderLinks");
-
-    res.status(200).json({ success: true, partner, foods });
-
-  } catch (err) {
-    console.error("Food partner error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-}
-
 // ====================== SAVED FOODS ======================
 async function getSaveFood(req, res) {
-  const user = req.user;
-
-  const savedFoods = await saveModel.find({ user: user._id }).populate("food");
-
+  const savedFoods = await saveModel.find({ user: req.user._id }).populate("food");
   res.status(200).json({ savedFoods });
 }
 
-// Get Food Partner's Own Foods
-async function getMyFoods(req, res) {
-  const foods = await foodModel.find({ foodPartner: req.foodPartner._id });
-  res.json({ success: true, foods });
+// ====================== MY UPLOADS (Partner) ======================
+async function getMyUploads(req, res) {
+  try {
+    const foods = await foodModel.find({ foodPartner: req.foodPartner._id }) // 🔥 FIXED
+      .populate("foodPartner", "name")
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, foods });
+  } catch (err) {
+    console.error("My uploads error:", err);
+    res.status(500).json({ success: false });
+  }
 }
 
-// Update Food
+// ====================== UPDATE FOOD ======================
 async function updateFood(req, res) {
   const updateData = {
     name: req.body.name,
@@ -211,7 +190,7 @@ async function updateFood(req, res) {
   res.json({ success: true, updated });
 }
 
-// Delete Food
+// ====================== DELETE FOOD ======================
 async function deleteFood(req, res) {
   const deleted = await foodModel.findOneAndDelete({
     _id: req.params.id,
@@ -222,7 +201,6 @@ async function deleteFood(req, res) {
 
   res.json({ success: true, message: "Food deleted" });
 }
-
 
 module.exports = {
   createFood,
@@ -235,5 +213,5 @@ module.exports = {
   getSaveFood,
   deleteFood,
   updateFood,
-  getMyFoods
+  getMyUploads
 };
