@@ -38,16 +38,46 @@ async function createFood(req, res) {
 // ====================== FETCH FOOD FEED ======================
 async function getFoodItems(req, res) {
   try {
-    const foodItems = await foodModel.find()
+    const onlyFollowed = req.query.onlyFollowed === "true";
+    let filter = {};
+
+    if (onlyFollowed && req.user) {
+      filter.foodPartner = { $in: req.user.following || [] };
+    }
+
+    const userId = req.user?._id;
+
+    const foodItems = await foodModel.find(filter)
       .populate("foodPartner", "name address phone city")
       .sort({ createdAt: -1 });
 
-    res.status(200).json({ success: true, foodItems });
+    let results = foodItems.map(f => ({
+      ...f.toObject(),
+      _likedByMe: false,
+      _savedByMe: false
+    }));
+
+    if (userId) {
+      const likes = await likeModel.find({ user: userId, food: { $in: foodItems.map(f => f._id) } });
+      const saves = await saveModel.find({ user: userId, food: { $in: foodItems.map(f => f._id) } });
+
+      const likedIds = new Set(likes.map(l => l.food.toString()));
+      const savedIds = new Set(saves.map(s => s.food.toString()));
+
+      results = results.map(f => ({
+        ...f,
+        _likedByMe: likedIds.has(f._id.toString()),
+        _savedByMe: savedIds.has(f._id.toString())
+      }));
+    }
+
+    res.status(200).json({ success: true, foodItems: results });
   } catch (err) {
     console.error("Error fetching food:", err);
-    res.status(500).json({ success: false, message: "Server Error" });
+    res.status(500).json({ success: false });
   }
 }
+
 
 // ====================== FOOD PARTNER DETAILS ======================
 async function getFoodPartnerDetails(req, res) {
@@ -201,6 +231,102 @@ async function deleteFood(req, res) {
 
   res.json({ success: true, message: "Food deleted" });
 }
+// ====================== FOLLOW PARTNER ======================
+async function followPartner(req, res) {
+  try {
+    const userId = req.user._id;
+    const { partnerId } = req.body;
+
+    // Add only if not already followed
+    await userModel.findByIdAndUpdate(userId, {
+      $addToSet: { following: partnerId }
+    });
+
+    await foodPartnerModel.findByIdAndUpdate(partnerId, {
+      $addToSet: { followers: userId }
+    });
+
+    res.status(200).json({ success: true, followed: true });
+  } catch (err) {
+    console.error("Follow error:", err);
+    res.status(500).json({ success: false });
+  }
+}
+
+// ====================== UNFOLLOW PARTNER ======================
+async function unfollowPartner(req, res) {
+  try {
+    const userId = req.user._id;
+    const { partnerId } = req.body;
+
+    await userModel.findByIdAndUpdate(userId, {
+      $pull: { following: partnerId }
+    });
+
+    await foodPartnerModel.findByIdAndUpdate(partnerId, {
+      $pull: { followers: userId }
+    });
+
+    res.status(200).json({ success: true, followed: false });
+  } catch (err) {
+    console.error("Unfollow error:", err);
+    res.status(500).json({ success: false });
+  }
+}
+async function getRecommendedFeed(req, res){
+  try {
+    const user = req.user;
+
+    const followingIds = user.following || [];
+
+    const foods = await foodModel
+      .find({ foodPartner: { $in: followingIds } })
+      .populate("foodPartner", "name")
+      .sort({ createdAt: -1 });
+
+    const categoryPrefs = await likeModel.aggregate([
+      { $match: { user: user._id } },
+      {
+        $lookup: {
+          from: "foods",
+          localField: "food",
+          foreignField: "_id",
+          as: "food"
+        }
+      },
+      { $unwind: "$food" },
+      {
+        $group: {
+          _id: "$food.category",
+          likes: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const categoryMap = {};
+    categoryPrefs.forEach(c => {
+      categoryMap[c._id] = c.likes;
+    });
+
+    const scored = foods.map(f => {
+      const categoryScore = categoryMap[f.category] || 0;
+      const recencyBonus = Math.max(0, 10 - Math.floor((Date.now() - new Date(f.createdAt)) / 86400000));
+
+      return {
+        ...f._doc,
+        _score: f.likeCount * 2 + f.savesCount * 3 + categoryScore * 4 + recencyBonus
+      };
+    });
+
+    scored.sort((a, b) => b._score - a._score);
+
+    res.json({ success: true, recommended: scored.slice(0, 20) });
+  } catch (err) {
+    console.error("Recommendation error:", err);
+    res.status(500).json({ success: false });
+  }
+};
+
 
 module.exports = {
   createFood,
@@ -213,5 +339,9 @@ module.exports = {
   getSaveFood,
   deleteFood,
   updateFood,
-  getMyUploads
+  getMyUploads,
+  followPartner,
+  unfollowPartner,
+  getRecommendedFeed
+
 };

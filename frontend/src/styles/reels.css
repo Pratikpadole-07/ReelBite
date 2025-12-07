@@ -24,6 +24,10 @@
 .reel-row:hover {
   transform: translateY(-6px);
 }
+.action-group button.active {
+  transform: scale(1.1);
+  filter: brightness(1.3);
+}
 
 /* Video Box */
 .reel-box {
@@ -138,6 +142,92 @@
   background: #ff9800;
   transform: scale(1.05);
 }
+.cm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.cm-box {
+  background: #181818;
+  width: 340px;
+  max-height: 70vh;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.cm-head {
+  padding: 10px;
+  border-bottom: 1px solid #333;
+  display: flex;
+  justify-content: space-between;
+  color: #fff;
+}
+
+.cm-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  color: #ddd;
+}
+
+.cm-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #333;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cm-user {
+  font-size: 13px;
+  color: #ffb300;
+}
+
+.cm-text {
+  flex: 1;
+  margin-left: 6px;
+  font-size: 14px;
+}
+
+.cm-del {
+  background: none;
+  border: none;
+  color: red;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.cm-input {
+  border-top: 1px solid #333;
+  display: flex;
+  padding: 8px;
+  background: #111;
+}
+
+.cm-input input {
+  flex: 1;
+  padding: 6px;
+  background: #000;
+  border: none;
+  color: #fff;
+  font-size: 14px;
+}
+
+.cm-input button {
+  background: #ffb300;
+  border: none;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
 
 /* MOBILE Responsive */
 @media (max-width: 768px) {

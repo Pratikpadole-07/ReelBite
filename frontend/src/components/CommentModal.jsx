@@ -1,72 +1,90 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-
-const API_URL = "http://localhost:3000/api";
+import React, { useEffect, useState, useContext } from "react";
+import api from "../assets/api/api";
+import { AuthContext } from "../context/AuthContext";
 
 const CommentModal = ({ foodId, isOpen, onClose }) => {
+  const { user } = useContext(AuthContext);
   const [comments, setComments] = useState([]);
-  const [text, setText] = useState("");
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const fetchComments = async () => {
+  useEffect(() => {
     if (!foodId) return;
+    loadComments();
+  }, [foodId]);
+
+  const loadComments = async () => {
     try {
-      const res = await axios.get(`${API_URL}/comments/${foodId}`, {
-        withCredentials: true,
-      });
+      const res = await api.get(`/food/comments/${foodId}`);
       setComments(res.data.comments || []);
     } catch (err) {
-      console.error("Fetch comments error:", err);
+      console.log("Load comments failed");
     }
   };
 
-  useEffect(() => {
-    if (isOpen) fetchComments();
-  }, [isOpen, foodId]);
-
   const addComment = async () => {
-    if (!text.trim()) return;
+    if (!input.trim()) return;
+    setLoading(true);
     try {
-      await axios.post(
-        `${API_URL}/comments`,
-        { foodId, text },
-        { withCredentials: true }
-      );
-      setText("");
-      fetchComments();
-    } catch (err) {
-      console.error("Comment add error:", err);
+      const res = await api.post(`/food/comment`, {
+        foodId,
+        text: input
+      });
+      setComments(prev => [res.data.comment, ...prev]);
+      setInput("");
+    } catch {
+      console.log("Add comment failed");
+    }
+    setLoading(false);
+  };
+
+  const deleteComment = async (id) => {
+    try {
+      await api.delete(`/food/comment/${id}`);
+      setComments(prev => prev.filter(c => c._id !== id));
+    } catch {
+      console.log("Delete comment failed");
     }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="comment-overlay">
-      <div className="comment-box">
-        <button className="close-btn" onClick={onClose}>✖</button>
+    <div className="cm-backdrop" onClick={onClose}>
+      <div className="cm-box" onClick={(e) => e.stopPropagation()}>
 
-        <div className="comment-list">
-          {comments.map((c) => (
-            <p key={c._id}>
-              <strong>{c.user?.name || "User"}:</strong> {c.text}
-            </p>
-          ))}
-
-          {comments.length === 0 && (
-            <p style={{ textAlign: "center", color: "#aaa" }}>
-              No comments yet. Be first! ✨
-            </p>
-          )}
+        <div className="cm-head">
+          <span>Comments</span>
+          <button className="cm-close" onClick={onClose}>x</button>
         </div>
 
-        <div className="comment-input-box">
+        <div className="cm-body">
+          {comments.length === 0 && (
+            <p className="cm-empty">No comments yet</p>
+          )}
+
+          {comments.map((c) => (
+            <div key={c._id} className="cm-item">
+              <div className="cm-user">{c.user?.name || "User"}</div>
+              <div className="cm-text">{c.text}</div>
+              {user && user._id === c.user?._id && (
+                <button className="cm-del" onClick={() => deleteComment(c._id)}>
+                  delete
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="cm-input">
           <input
-            type="text"
-            placeholder="Add a comment..."
-            value={text}
-            onChange={(e) => setText(e.target.value)}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Write a comment..."
           />
-          <button onClick={addComment}>Send</button>
+          <button disabled={loading} onClick={addComment}>
+            Send
+          </button>
         </div>
       </div>
     </div>

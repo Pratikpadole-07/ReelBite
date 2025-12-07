@@ -17,7 +17,9 @@ const userSchema = new mongoose.Schema({
     avatar: {
         type: String,
         default: "https://ui-avatars.com/api/?name=User"
-    }
+    },
+    following: [{ type: mongoose.Schema.Types.ObjectId, ref: "FoodPartner" }]
+
 
 },
     {

@@ -7,82 +7,122 @@ const API_URL = "http://localhost:3000/api";
 
 const Home = () => {
   const [videos, setVideos] = useState([]);
+  const [recommended, setRecommended] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
+  const [tab, setTab] = useState("forYou");
+  const [showRecommended, setShowRecommended] = useState(false);
 
   const fetchVideos = async () => {
     setIsLoading(true);
     try {
       const res = await axios.get(`${API_URL}/food`, {
         withCredentials: true,
-        params: { search, category }
-    });
+        params: {
+          search,
+          category,
+          onlyFollowed: tab === "following"
+        }
+      });
 
-
-      setVideos(res.data.foodItems || []); // fix here
+      // direct set from backend including persistence flags
+      setVideos(res.data.foodItems || []);
     } catch (err) {
       console.log("Error fetching food:", err);
     }
     setIsLoading(false);
   };
 
+  const fetchRecommended = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/food/recommended`, {
+        withCredentials: true
+      });
+      setRecommended(res.data.recommended || []);
+    } catch (err) {
+      console.log("Recommended error:", err);
+    }
+  };
+
   useEffect(() => {
     fetchVideos();
-  }, [search, category]);
+    fetchRecommended();
+  }, [search, category, tab]);
 
-    const likeVideo = async (item) => {
-    try {
-      const response = await axios.post(
-        `${API_URL}/food/like`,
-        { foodId: item._id },
-        { withCredentials: true }
-      );
 
-      const isLiked = response.data.like;
+  const likeVideo = async (item) => {
+  const isRecommended = showRecommended;
 
-      setVideos((prev) =>
-        prev.map((v) =>
-          v._id === item._id
-            ? { ...v, likeCount: isLiked ? v.likeCount + 1 : v.likeCount - 1 }
-            : v
-        )
-      );
+  const updater = (list) =>
+    list.map(v =>
+      v._id === item._id
+        ? {
+            ...v,
+            _likedByMe: !v._likedByMe,
+            likeCount: v._likedByMe
+              ? Math.max(0, v.likeCount - 1)
+              : v.likeCount + 1
+          }
+        : v
+    );
 
-    } catch (err) {
-      console.error("Like error:", err);
-    }
-  };
+  const prevVideos = [...videos];
+  const prevRecommended = [...recommended];
 
+  if (isRecommended) {
+    setRecommended(updater);
+  } else {
+    setVideos(updater);
+  }
+
+  try {
+    await axios.post(`${API_URL}/food/like`, { foodId: item._id }, { withCredentials: true });
+  } catch (err) {
+    console.error("Like error:", err);
+    setVideos(prevVideos);
+    setRecommended(prevRecommended);
+  }
+};
 
   const saveVideo = async (item) => {
-    try {
-      const response = await axios.post(
-        `${API_URL}/food/save`,
-        { foodId: item._id },
-        { withCredentials: true }
-      );
+  const isRecommended = showRecommended;
 
-      const isSaved = response.data.save;
+  const updater = (list) =>
+    list.map(v =>
+      v._id === item._id
+        ? {
+            ...v,
+            _savedByMe: !v._savedByMe,
+            savesCount: v._savedByMe
+              ? Math.max(0, v.savesCount - 1)
+              : v.savesCount + 1
+          }
+        : v
+    );
 
-      setVideos((prev) =>
-        prev.map((v) =>
-          v._id === item._id
-            ? { ...v, savesCount: isSaved ? v.savesCount + 1 : v.savesCount - 1 }
-            : v
-        )
-      );
+  const prevVideos = [...videos];
+  const prevRecommended = [...recommended];
 
-    } catch (err) {
-      console.error("Save error:", err);
-    }
-  };
+  if (isRecommended) {
+    setRecommended(updater);
+  } else {
+    setVideos(updater);
+  }
+
+  try {
+    await axios.post(`${API_URL}/food/save`, { foodId: item._id }, { withCredentials: true });
+  } catch (err) {
+    console.error("Save error:", err);
+    setVideos(prevVideos);
+    setRecommended(prevRecommended);
+  }
+};
 
 
   return (
     <>
-      {/* 🔎 Search + Filter UI */}
       <div className="reel-filters">
         <input
           type="text"
@@ -91,6 +131,20 @@ const Home = () => {
           onChange={(e) => setSearch(e.target.value)}
           className="search-input"
         />
+        <div className="feed-toggle">
+          <button
+            className={!showRecommended ? "active" : ""}
+            onClick={() => setShowRecommended(false)}
+          >
+            All Reels
+          </button>
+          <button
+            className={showRecommended ? "active" : ""}
+            onClick={() => setShowRecommended(true)}
+          >
+            For You
+          </button>
+        </div>
 
         <select
           value={category}
@@ -108,11 +162,26 @@ const Home = () => {
         </select>
       </div>
 
+      <div className="feed-tabs">
+        <button
+          className={tab === "forYou" ? "active" : ""}
+          onClick={() => setTab("forYou")}
+        >
+          For You
+        </button>
+        <button
+          className={tab === "following" ? "active" : ""}
+          onClick={() => setTab("following")}
+        >
+          Following
+        </button>
+      </div>
+
       <ReelFeed
-        items={videos}
+        items={showRecommended ? recommended : videos}
         onLike={likeVideo}
         onSave={saveVideo}
-        emptyMessage="No food reels found."
+        emptyMessage="No reels found"
         isLoading={isLoading}
       />
     </>

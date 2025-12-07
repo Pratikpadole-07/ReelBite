@@ -18,7 +18,7 @@ router.post(
 );
 
 /* GET ALL FOOD ITEMS (For Users) */
-router.get("/", authUserMiddleware, foodController.getFoodItems);
+router.get("/food", authUserMiddleware, foodController.getFoodItems);
 
 /* LIKE FOOD */
 router.post("/like", authUserMiddleware, foodController.likeFood);
@@ -55,5 +55,21 @@ router.get(
   authFoodPartnerMiddleware,
   foodController.getMyUploads
 );
+router.post("/follow",
+  auth.middleware.authUserMiddleware,
+  foodController.followPartner
+);
+
+router.post("/unfollow",
+  auth.middleware.authUserMiddleware,
+  foodController.unfollowPartner
+);
+
+router.get(
+  "/food/recommended",
+  authMiddleware.authUserMiddleware,
+  foodController.getRecommendedFeed
+);
+
 
 module.exports = router;

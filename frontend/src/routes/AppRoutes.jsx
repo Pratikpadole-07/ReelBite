@@ -80,7 +80,10 @@ const AppRoutes = () => (
           </PrivateRoute>
         }
       />
+      <Route path="/orders" element={<UserOrders />} />
+      <Route path="/partner/orders" element={<PartnerOrders />} />
 
+      <Route path="/food-partner/:id" element={<RestaurantProfilePublic />} />
 
       <Route path="/search" element={<><Search /><BottomNav /></>} />
 

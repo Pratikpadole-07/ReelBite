@@ -27,6 +27,7 @@ const foodPartnerSchema = new mongoose.Schema({
     enum: ["Veg", "Non-Veg", "Both"],
     default: "Both"
   },
+  followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
   rating: { type: Number, default: 4.0 },
   
