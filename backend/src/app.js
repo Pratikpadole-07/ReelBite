@@ -8,14 +8,15 @@ const cors = require('cors');
 
 const app = express();
 
+// COOKIE PARSER BEFORE ROUTES
+app.use(cookieParser());
 // CORS FIRST
 app.use(cors({
     origin: 'http://localhost:5173',
     credentials: true
 }));
 
-// COOKIE PARSER BEFORE ROUTES
-app.use(cookieParser());
+
 
 // JSON PARSER
 app.use(express.json());
@@ -31,7 +32,7 @@ app.get("/", (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/food', foodRoutes);
 app.use('/api/food-partner', foodPartnerRoutes);
-app.use("/api/order-intent", require("./routes/orderIntent.routes"))
+app.use("/api/order-intent", require("./routes/orderIntent.routes"));
 app.use("/api/order", require("./routes/order.routes"))
 
 

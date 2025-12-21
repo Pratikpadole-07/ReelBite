@@ -1,9 +1,26 @@
-const router = require("express").Router()
-const auth = require("../middlewares/auth.middleware")
-const intent = require("../controllers/orderIntent.controller")
+// src/routes/orderIntent.routes.js
+const express = require("express");
+const router = express.Router();
+const { authFoodPartnerMiddleware } = require("../middlewares/auth.middleware");
+const {
+  createOrderIntent,
+  getPartnerOrderIntents,
+  getPartnerOrderAnalytics
+} = require("../controllers/orderIntent.controller");
 
-router.post("/", auth.authUserMiddleware, intent.createIntent)
-router.get("/analytics", auth.authFoodPartnerMiddleware, intent.analytics)
-router.get("/trends", auth.authFoodPartnerMiddleware, intent.getOrderTrends)
+// user creates intent
+router.post("/", require("../middlewares/auth.middleware").authUserMiddleware, createOrderIntent);
 
-module.exports = router
+// partner dashboard
+router.get(
+  "/partner",
+  authFoodPartnerMiddleware,
+  getPartnerOrderIntents
+);
+router.get(
+  "/analytics",
+  authFoodPartnerMiddleware,
+  getPartnerOrderAnalytics
+);
+
+module.exports = router;

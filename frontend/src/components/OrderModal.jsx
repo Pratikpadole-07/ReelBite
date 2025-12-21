@@ -1,38 +1,37 @@
-import React from "react"
-import "./OrderModal.css"
+import React from "react";
+import "../styles/OrderModal.css";
 
-const OrderModal = ({ food, onClose, onConfirm }) => {
-  if (!food) return null
-
-  const partner = food.foodPartner || {}
-  const links = partner.orderLinks || {}
-
-  const methods = [
-    { label: "Zomato", value: "zomato", url: links.zomato },
-    { label: "Swiggy", value: "swiggy", url: links.swiggy },
-    { label: "Call Now", value: "call", url: links.call || links.phone }
-  ].filter(m => m.url) // only show available methods
+const OrderModal = ({ isOpen, methods = [], onClose, onConfirm }) => {
+  if (!isOpen) return null;
 
   return (
-    <div className="order-modal-backdrop">
-      <div className="order-modal">
+    <div className="order-modal-backdrop" onClick={onClose}>
+      <div
+        className="order-modal"
+        onClick={(e) => e.stopPropagation()}
+      >
         <h3>Choose Order Method</h3>
-        {methods.map(m => (
-          <button
-            key={m.value}
-            className="order-option"
-            onClick={() => onConfirm(food, m.value, m.url)}
-          >
-            {m.label}
-          </button>
-        ))}
+
+        {methods.length === 0 ? (
+          <p className="order-empty">No order options available</p>
+        ) : (
+          methods.map(({ label, method, url }) => (
+            <button
+              key={method}
+              className="order-option"
+              onClick={() => onConfirm(method, url)}
+            >
+              {label}
+            </button>
+          ))
+        )}
 
         <button className="cancel-btn" onClick={onClose}>
           Cancel
         </button>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default OrderModal
+export default OrderModal;

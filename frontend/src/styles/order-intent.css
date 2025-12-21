@@ -1,0 +1,114 @@
+.order-intent-page {
+  padding: 24px;
+  background: #0f0f0f;
+  color: #f1f1f1;
+  min-height: 100vh;
+}
+
+.order-intent-page h2 {
+  margin-bottom: 20px;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+/* ================= ANALYTICS ================= */
+
+.intent-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 30px;
+}
+
+.stat-card {
+  background: #1b1b1b;
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.stat-card b {
+  display: block;
+  margin-top: 6px;
+  font-size: 22px;
+  color: #00ff9c;
+}
+
+/* ================= TABLE ================= */
+
+.intent-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #141414;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.intent-table thead {
+  background: #1f1f1f;
+}
+
+.intent-table th,
+.intent-table td {
+  padding: 14px 16px;
+  text-align: left;
+  font-size: 14px;
+}
+
+.intent-table th {
+  color: #aaa;
+  font-weight: 500;
+}
+
+.intent-table tbody tr {
+  border-top: 1px solid #262626;
+}
+
+.intent-table tbody tr:hover {
+  background: #1a1a1a;
+}
+
+/* ================= METHOD TAGS ================= */
+
+.method {
+  font-weight: 600;
+}
+
+.method.zomato {
+  color: #ff4d4f;
+}
+
+.method.swiggy {
+  color: #ffa940;
+}
+
+.method.call {
+  color: #52c41a;
+}
+
+.method.inquiry {
+  color: #1890ff;
+}
+
+/* ================= EMPTY ================= */
+
+.empty-text {
+  color: #777;
+  margin-top: 40px;
+  text-align: center;
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media (max-width: 768px) {
+  .intent-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .intent-table th,
+  .intent-table td {
+    font-size: 12px;
+    padding: 10px;
+  }
+}

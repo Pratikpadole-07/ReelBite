@@ -1,12 +1,11 @@
-import React, { useContext, useState } from 'react';
-import '../../styles/auth-shared.css';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import React, { useContext, useState } from "react";
+import "../../styles/auth-shared.css";
+import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 
 const FoodPartnerLogin = () => {
   const navigate = useNavigate();
-  const { loginPartner } = useContext(AuthContext);
+  const { loginFoodPartner } = useContext(AuthContext); // ✅ CORRECT
   const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
@@ -17,16 +16,10 @@ const FoodPartnerLogin = () => {
     const password = e.target.password.value;
 
     try {
-      const res = await axios.post(
-        "http://localhost:3000/api/auth/food-partner/login",
-        { email, password },
-        { withCredentials: true }
-      );
-
-      loginPartner(res.data.foodPartner); // ⬅ Update global context
-
-      navigate(`/food-partner/${res.data.foodPartner._id}`); // ⬅ Redirect to dashboard
+      await loginFoodPartner(email, password); // ✅ CONTEXT CONTROLS LOGIN
+      navigate("/food-partner/profile");       // or dashboard route
     } catch (err) {
+      console.error("Partner login failed:", err);
       setError("Invalid email or password ❌");
     }
   };
@@ -49,7 +42,7 @@ const FoodPartnerLogin = () => {
         </form>
 
         <p className="auth-alt-action">
-          New partner? <a href="/partner/register">Create account</a>
+          New partner? <a href="/food-partner/register">Create account</a>
         </p>
       </div>
     </div>

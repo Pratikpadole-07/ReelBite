@@ -1,63 +1,78 @@
-const express = require('express');
-const authController = require('../controllers/auth.controller');
-const authMiddleware = require("../middlewares/auth.middleware");
-const foodPartnerModel = require("../models/foodpartner.model");
-const userModel = require("../models/user.model");
-const multer = require("multer");
-const upload = multer({ storage: multer.memoryStorage() });
+const express = require("express");
 const router = express.Router();
 
+const authController = require("../controllers/auth.controller");
+const {
+  authUserMiddleware,
+  authFoodPartnerMiddleware
+} = require("../middlewares/auth.middleware");
 
-// User routes
-router.post('/user/register', authController.registerUser);
-router.post('/user/login', authController.loginUser);
-router.get('/user/logout', authController.logoutUser);
+const userModel = require("../models/user.model");
+const foodPartnerModel = require("../models/foodpartner.model");
+
+const multer = require("multer");
+const upload = multer({ storage: multer.memoryStorage() });
+
+/* ================= USER ROUTES ================= */
+
+// Register user
+router.post("/user/register", authController.registerUser);
+
+// Login user
+router.post("/user/login", authController.loginUser);
+
+// Logout user
+router.get("/user/logout", authController.logoutUser);
+
+// Upload avatar
 router.post(
   "/user/avatar",
-  authMiddleware.authUserMiddleware,
+  authUserMiddleware,
   upload.single("avatar"),
   authController.updateUserAvatar
 );
 
-router.get("/user/me", authMiddleware.authUserMiddleware, async (req, res) => {
+// Get current user
+router.get("/user/me", authUserMiddleware, async (req, res) => {
   const user = await userModel.findById(req.user._id).select("-password");
   res.json({ user });
 });
 
+/* ================= FOOD PARTNER ROUTES ================= */
 
-// Food partner routes
-router.post('/food-partner/register', authController.registerFoodPartner);
-router.post('/food-partner/login', authController.loginFoodPartner);
-router.get('/food-partner/logout', authController.logoutFoodPartner);
+// Register partner
+router.post("/food-partner/register", authController.registerFoodPartner);
 
+// Login partner
+router.post("/food-partner/login", authController.loginFoodPartner);
+
+// Logout partner
+router.get("/food-partner/logout", authController.logoutFoodPartner);
+
+// Get current partner
 router.get(
   "/food-partner/me",
-  authMiddleware.authFoodPartnerMiddleware,
+  authFoodPartnerMiddleware,
   async (req, res) => {
-    try {
-      const partner = await foodPartnerModel
-        .findById(req.user._id)
-        .select("-password");
+    const partner = await foodPartnerModel
+      .findById(req.user._id)
+      .select("-password");
 
-      if (!partner) {
-        return res.status(404).json({ message: "Not found" });
-      }
-
-      res.json({ foodPartner: partner });
-    } catch (err) {
-      console.error("Get partner error:", err);
-      res.status(500).json({ message: "Server error" });
+    if (!partner) {
+      return res.status(404).json({ message: "Not found" });
     }
+
+    res.json({ foodPartner: partner });
   }
 );
 
-
+// Update partner profile
 router.put(
   "/food-partner/update",
-  authMiddleware.authFoodPartnerMiddleware,
+  authFoodPartnerMiddleware,
   upload.single("logo"),
   authController.updateFoodPartnerProfile
 );
-
+console.log("AUTH CONTROLLER:", authController);
 
 module.exports = router;

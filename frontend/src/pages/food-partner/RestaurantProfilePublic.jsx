@@ -1,6 +1,6 @@
 // RestaurantProfilePublic.jsx
 import React, { useEffect, useState, useContext } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import "../../styles/restaurant.css";
 import api from "../../assets/api/api";
 import ReelFeed from "../../components/ReelFeed";
@@ -9,10 +9,11 @@ import { AuthContext } from "../../context/AuthContext";
 const RestaurantProfilePublic = () => {
   const { id } = useParams();
   const { user, foodPartner } = useContext(AuthContext);
-
+  
   const [partner, setPartner] = useState(null);
   const [foods, setFoods] = useState([]);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchData();
@@ -20,37 +21,46 @@ const RestaurantProfilePublic = () => {
 
   const fetchData = async () => {
     try {
-      const partnerRes = await api.get(`/food/partner/${id}`);
-      setPartner(partnerRes.data.partner);
-      setFoods(partnerRes.data.foods);
+      const res = await api.get(`/food/partner/${id}`);
 
-      if (user) {
-        const followRes = await api.get(`/auth/user/me`);
-        const followingList = followRes.data.user.following || [];
-        setIsFollowing(followingList.includes(id));
+      // ✅ correct keys
+      setPartner(res.data.foodPartner);
+      setFoods(res.data.foods || []);
+
+      // ✅ use AuthContext user directly
+      if (user?.following) {
+        setIsFollowing(user.following.includes(id));
       }
     } catch (err) {
-      console.log("Error loading partner page:", err);
+      console.error("Error loading partner page:", err);
+    } finally {
+      // 🔥 always end loading
+      setLoading(false);
     }
   };
 
   const toggleFollow = async () => {
     try {
-      const url = isFollowing ? "/unfollow" : "/follow";
+      const url = isFollowing ? "/food/unfollow" : "/food/follow";
       await api.post(url, { partnerId: id });
       setIsFollowing(!isFollowing);
     } catch (err) {
-      console.log("Follow error:", err);
+      console.error("Follow error:", err);
     }
   };
 
-  if (!partner) return <h3>Loading...</h3>;
+  if (loading) {
+    return <h3 style={{ padding: 20 }}>Loading...</h3>;
+  }
+
+  if (!partner) {
+    return <h3 style={{ padding: 20 }}>Restaurant not found</h3>;
+  }
 
   const isSelf = foodPartner && foodPartner._id === id;
 
   return (
     <main className="restaurant-page">
-
       {/* HEADER */}
       <header className="restaurant-header">
         <img

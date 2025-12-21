@@ -1,160 +1,159 @@
-const foodModel = require('../models/food.model');
-const storageService = require('../services/storage.service');
-const likeModel = require("../models/likes.model");
-const saveModel = require("../models/save.model");
-const { v4: uuid } = require("uuid");
-const foodPartnerModel = require("../models/foodpartner.model");
+const Food = require("../models/food.model");
+const FoodPartner = require("../models/foodpartner.model");
+const User = require("../models/user.model");
+const Like = require("../models/likes.model");
+const Save = require("../models/save.model");
 const Comment = require("../models/comment.model");
+const storageService = require("../services/storage.service");
+const { v4: uuid } = require("uuid");
+const Order = require("../models/order.model");
 
-// ====================== CREATE FOOD ======================
+/* ====================== CREATE FOOD ====================== */
 async function createFood(req, res) {
   try {
     if (!req.file) {
       return res.status(400).json({ message: "Video file required" });
     }
 
-    const uploadResult = await storageService.uploadFile(req.file.buffer, uuid());
+    const upload = await storageService.uploadFile(req.file.buffer, uuid());
 
-    const foodItem = await foodModel.create({
+    const food = await Food.create({
       name: req.body.name,
       description: req.body.description,
       price: req.body.price,
       category: req.body.category,
-      foodPartner: req.user._id,  // ✔ FIXED
-      video: uploadResult.url
+      foodPartner: req.user._id,
+      video: upload.url,
+      likeCount: 0,
+      savesCount: 0,
+      commentsCount: 0,
     });
 
-    res.status(201).json({
-      success: true,
-      message: "Food created successfully",
-      food: foodItem
-    });
+    res.status(201).json({ success: true, food });
   } catch (err) {
     console.error("Create food error:", err);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
-}
-
-// ====================== FETCH FOOD FEED ======================
-async function getFoodItems(req, res) {
-  try {
-    const onlyFollowed = req.query.onlyFollowed === "true";
-    let filter = {};
-
-    if (onlyFollowed && req.user) {
-      filter.foodPartner = { $in: req.user.following || [] };
-    }
-
-    const userId = req.user?._id;
-
-    const foodItems = await foodModel.find(filter)
-      .populate("foodPartner", "name address phone city")
-      .sort({ createdAt: -1 });
-
-    let results = foodItems.map(f => ({
-      ...f.toObject(),
-      _likedByMe: false,
-      _savedByMe: false
-    }));
-
-    if (userId) {
-      const likes = await likeModel.find({ user: userId, food: { $in: foodItems.map(f => f._id) } });
-      const saves = await saveModel.find({ user: userId, food: { $in: foodItems.map(f => f._id) } });
-
-      const likedIds = new Set(likes.map(l => l.food.toString()));
-      const savedIds = new Set(saves.map(s => s.food.toString()));
-
-      results = results.map(f => ({
-        ...f,
-        _likedByMe: likedIds.has(f._id.toString()),
-        _savedByMe: savedIds.has(f._id.toString())
-      }));
-    }
-
-    res.status(200).json({ success: true, foodItems: results });
-  } catch (err) {
-    console.error("Error fetching food:", err);
-    res.status(500).json({ success: false });
-  }
-}
-
-
-// ====================== FOOD PARTNER DETAILS ======================
-async function getFoodPartnerDetails(req, res) {
-  try {
-    const partner = await foodPartnerModel
-      .findById(req.params.id)
-      .select("-password");
-
-    if (!partner) {
-      return res.status(404).json({ message: "Restaurant not found" });
-    }
-
-    const foods = await foodModel.find({ foodPartner: partner._id })
-      .populate("foodPartner", "name address phone city")
-      .sort({ createdAt: -1 });
-
-    res.status(200).json({ success: true, partner, foods });
-  } catch (err) {
-    console.error("Food partner error:", err);
     res.status(500).json({ message: "Server error" });
   }
 }
 
-// ====================== LIKE FOOD ======================
+/* ====================== FETCH FOOD FEED ====================== */
+async function getFoodItems(req, res) {
+  try {
+    const { search = "", category = "All", onlyFollowed = "false" } = req.query;
+
+    const query = {};
+
+    // Search
+    if (search.trim()) {
+      query.name = { $regex: search.trim(), $options: "i" };
+    }
+
+    // Category
+    if (category !== "All") {
+      query.category = category;
+    }
+
+    // Follow filter only if user exists
+    if (onlyFollowed === "true") {
+      if (!req.user || !Array.isArray(req.user.following)) {
+        return res.json({ foodItems: [] });
+      }
+      query.foodPartner = { $in: req.user.following };
+    }
+
+    const foods = await Food.find(query)
+      .populate("foodPartner", "name phone orderLinks")
+      .sort({ createdAt: -1 });
+
+    res.json({ foodItems: foods });
+  } catch (err) {
+  console.error("❌ getFoodItems FULL ERROR:", err);
+  return res.status(500).json({
+    message: err.message,
+    stack: err.stack
+  });
+}
+
+}
+
+
+/* ====================== FOOD PARTNER PUBLIC PAGE ====================== */
+async function getFoodPartnerDetails(req, res) {
+  try {
+    const partner = await FoodPartner.findById(req.params.id).select("-password");
+    if (!partner) {
+      return res.status(404).json({ message: "Restaurant not found" });
+    }
+
+    const foods = await Food.find({ foodPartner: partner._id })
+      .populate("foodPartner", "name phone orderLinks")
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, partner, foods });
+  } catch (err) {
+    console.error("Partner page error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
+/* ====================== LIKE FOOD ====================== */
 async function likeFood(req, res) {
-  const { foodId } = req.body;
-  const user = req.user;
+  if (!req.user) return res.status(401).json({ message: "Unauthorized" });
 
-  const exists = await likeModel.findOne({ user: user._id, food: foodId });
+  const { foodId } = req.body;
+
+  const exists = await Like.findOne({ user: req.user._id, food: foodId });
 
   if (exists) {
-    await likeModel.deleteOne({ user: user._id, food: foodId });
-    await foodModel.findByIdAndUpdate(foodId, { $inc: { likeCount: -1 } });
-    return res.status(200).json({ like: false });
+    await Like.deleteOne({ _id: exists._id });
+    await Food.findByIdAndUpdate(foodId, { $inc: { likeCount: -1 } });
+    return res.json({ liked: false });
   }
 
-  await likeModel.create({ user: user._id, food: foodId });
-  await foodModel.findByIdAndUpdate(foodId, { $inc: { likeCount: 1 } });
+  await Like.create({ user: req.user._id, food: foodId });
+  await Food.findByIdAndUpdate(foodId, { $inc: { likeCount: 1 } });
 
-  res.status(200).json({ like: true });
+  res.json({ liked: true });
 }
 
-// ====================== SAVE FOOD ======================
+/* ====================== SAVE FOOD ====================== */
 async function saveFood(req, res) {
-  const { foodId } = req.body;
-  const user = req.user;
+  if (!req.user) return res.status(401).json({ message: "Unauthorized" });
 
-  const exists = await saveModel.findOne({ user: user._id, food: foodId });
+  const { foodId } = req.body;
+
+  const exists = await Save.findOne({ user: req.user._id, food: foodId });
 
   if (exists) {
-    await saveModel.deleteOne({ user: user._id, food: foodId });
-    await foodModel.findByIdAndUpdate(foodId, { $inc: { savesCount: -1 } });
-    return res.status(200).json({ save: false });
+    await Save.deleteOne({ _id: exists._id });
+    await Food.findByIdAndUpdate(foodId, { $inc: { savesCount: -1 } });
+    return res.json({ saved: false });
   }
 
-  await saveModel.create({ user: user._id, food: foodId });
-  await foodModel.findByIdAndUpdate(foodId, { $inc: { savesCount: 1 } });
+  await Save.create({ user: req.user._id, food: foodId });
+  await Food.findByIdAndUpdate(foodId, { $inc: { savesCount: 1 } });
 
-  res.status(200).json({ save: true });
+  res.json({ saved: true });
 }
 
-// ====================== COMMENTS ======================
+/* ====================== COMMENTS ====================== */
 async function addComment(req, res) {
+  if (!req.user) return res.status(401).json({ message: "Unauthorized" });
+
   try {
     const { foodId, text } = req.body;
 
-    const newComment = await Comment.create({
+    const comment = await Comment.create({
       food: foodId,
       user: req.user._id,
-      text
+      text,
     });
 
-    await foodModel.findByIdAndUpdate(foodId, {
-      $inc: { commentsCount: 1 }
+    await Food.findByIdAndUpdate(foodId, {
+      $inc: { commentsCount: 1 },
     });
 
-    res.status(201).json({ success: true, comment: newComment });
+    res.status(201).json({ success: true, comment });
   } catch (err) {
     console.error("Add comment error:", err);
     res.status(500).json({ success: false });
@@ -164,7 +163,7 @@ async function addComment(req, res) {
 async function getComments(req, res) {
   try {
     const comments = await Comment.find({ food: req.params.foodId })
-      .populate("user", "name email")
+      .populate("user", "fullName email")
       .sort({ createdAt: -1 });
 
     res.json({ success: true, comments });
@@ -174,174 +173,123 @@ async function getComments(req, res) {
   }
 }
 
-// ====================== SAVED FOODS ======================
-async function getSaveFood(req, res) {
-  const savedFoods = await saveModel.find({ user: req.user._id }).populate("food");
-  res.status(200).json({ savedFoods });
-}
+/* ====================== FOLLOW / UNFOLLOW ====================== */
+async function followPartner(req, res) {
+  if (!req.user) return res.status(401).json({ message: "Unauthorized" });
 
-// ====================== MY UPLOADS ======================
-async function getMyUploads(req, res) {
-  try {
-    const foods = await foodModel.find({ foodPartner: req.user._id }) // ✔ FIXED
-      .populate("foodPartner", "name")
-      .sort({ createdAt: -1 });
+  const { partnerId } = req.body;
 
-    res.json({ success: true, foods });
-  } catch (err) {
-    console.error("My uploads error:", err);
-    res.status(500).json({ success: false });
-  }
-}
-
-// ====================== UPDATE FOOD ======================
-async function updateFood(req, res) {
-  const updateData = {
-    name: req.body.name,
-    description: req.body.description,
-    price: req.body.price,
-    category: req.body.category,
-    orderLink: req.body.orderLink,
-  };
-
-  if (req.file) {
-    const uploadResult = await storageService.uploadFile(req.file.buffer, uuid());
-    updateData.video = uploadResult.url;
-  }
-
-  const updated = await foodModel.findOneAndUpdate(
-    { _id: req.params.id, foodPartner: req.user._id }, // ✔ FIXED
-    updateData,
-    { new: true }
-  );
-
-  if (!updated) return res.status(404).json({ message: "Not allowed or not found" });
-
-  res.json({ success: true, updated });
-}
-
-// ====================== DELETE FOOD ======================
-async function deleteFood(req, res) {
-  const deleted = await foodModel.findOneAndDelete({
-    _id: req.params.id,
-    foodPartner: req.user._id, // ✔ FIXED
+  await User.findByIdAndUpdate(req.user._id, {
+    $addToSet: { following: partnerId },
   });
 
-  if (!deleted) return res.status(404).json({ message: "Not allowed or not found" });
+  await FoodPartner.findByIdAndUpdate(partnerId, {
+    $addToSet: { followers: req.user._id },
+  });
 
-  res.json({ success: true, message: "Food deleted" });
-}
-// ====================== FOLLOW PARTNER ======================
-async function followPartner(req, res) {
-  try {
-    const userId = req.user._id;
-    const { partnerId } = req.body;
-
-    // Add only if not already followed
-    await userModel.findByIdAndUpdate(userId, {
-      $addToSet: { following: partnerId }
-    });
-
-    await foodPartnerModel.findByIdAndUpdate(partnerId, {
-      $addToSet: { followers: userId }
-    });
-
-    res.status(200).json({ success: true, followed: true });
-  } catch (err) {
-    console.error("Follow error:", err);
-    res.status(500).json({ success: false });
-  }
+  res.json({ success: true });
 }
 
-// ====================== UNFOLLOW PARTNER ======================
 async function unfollowPartner(req, res) {
+  if (!req.user) return res.status(401).json({ message: "Unauthorized" });
+
+  const { partnerId } = req.body;
+
+  await User.findByIdAndUpdate(req.user._id, {
+    $pull: { following: partnerId },
+  });
+
+  await FoodPartner.findByIdAndUpdate(partnerId, {
+    $pull: { followers: req.user._id },
+  });
+
+  res.json({ success: true });
+}
+
+async function getMyUploads(req, res) {
+  const foods = await Food.find({
+    foodPartner: req.user._id
+  }).sort({ createdAt: -1 });
+
+  res.json({ foods });
+}
+
+async function getOrderAnalytics(req, res) {
   try {
-    const userId = req.user._id;
-    const { partnerId } = req.body;
+    const partnerId = req.user._id;
 
-    await userModel.findByIdAndUpdate(userId, {
-      $pull: { following: partnerId }
+    const orders = await Order.find({
+      foodPartner: partnerId,
+      status: "completed"
     });
 
-    await foodPartnerModel.findByIdAndUpdate(partnerId, {
-      $pull: { followers: userId }
+    let totalOrders = orders.length;
+    let totalRevenue = 0;
+
+    for (const order of orders) {
+      totalRevenue += order.totalAmount;
+    }
+
+    res.json({
+      totalOrders,
+      totalRevenue
     });
 
-    res.status(200).json({ success: true, followed: false });
   } catch (err) {
-    console.error("Unfollow error:", err);
-    res.status(500).json({ success: false });
+    console.error("Order analytics error:", err);
+    res.status(500).json({ message: "Failed to fetch analytics" });
   }
 }
-async function getRecommendedFeed(req, res){
+async function getOrderTrends(req, res) {
   try {
-    const user = req.user;
+    const partnerId = req.user._id;
 
-    const followingIds = user.following || [];
-
-    const foods = await foodModel
-      .find({ foodPartner: { $in: followingIds } })
-      .populate("foodPartner", "name")
-      .sort({ createdAt: -1 });
-
-    const categoryPrefs = await likeModel.aggregate([
-      { $match: { user: user._id } },
+    const trends = await Order.aggregate([
       {
-        $lookup: {
-          from: "foods",
-          localField: "food",
-          foreignField: "_id",
-          as: "food"
+        $match: {
+          foodPartner: partnerId,
+          status: "completed"
         }
       },
-      { $unwind: "$food" },
       {
         $group: {
-          _id: "$food.category",
-          likes: { $sum: 1 }
+          _id: {
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" },
+            day: { $dayOfMonth: "$createdAt" }
+          },
+          orders: { $sum: 1 },
+          revenue: { $sum: "$totalAmount" }
+        }
+      },
+      {
+        $sort: {
+          "_id.year": 1,
+          "_id.month": 1,
+          "_id.day": 1
         }
       }
     ]);
 
-    const categoryMap = {};
-    categoryPrefs.forEach(c => {
-      categoryMap[c._id] = c.likes;
-    });
+    res.json(trends);
 
-    const scored = foods.map(f => {
-      const categoryScore = categoryMap[f.category] || 0;
-      const recencyBonus = Math.max(0, 10 - Math.floor((Date.now() - new Date(f.createdAt)) / 86400000));
-
-      return {
-        ...f._doc,
-        _score: f.likeCount * 2 + f.savesCount * 3 + categoryScore * 4 + recencyBonus
-      };
-    });
-
-    scored.sort((a, b) => b._score - a._score);
-
-    res.json({ success: true, recommended: scored.slice(0, 20) });
   } catch (err) {
-    console.error("Recommendation error:", err);
-    res.status(500).json({ success: false });
+    console.error("Order trends error:", err);
+    res.status(500).json({ message: "Failed to fetch trends" });
   }
-};
-
-
+}
+/* ====================== EXPORTS ====================== */
 module.exports = {
   createFood,
   getFoodItems,
+  getFoodPartnerDetails,
   likeFood,
   saveFood,
   addComment,
   getComments,
-  getFoodPartnerDetails,
-  getSaveFood,
-  deleteFood,
-  updateFood,
-  getMyUploads,
   followPartner,
   unfollowPartner,
-  getRecommendedFeed
-
+  getMyUploads,
+  getOrderAnalytics,
+  getOrderTrends
 };

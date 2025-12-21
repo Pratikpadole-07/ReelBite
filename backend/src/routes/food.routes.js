@@ -1,74 +1,68 @@
 const express = require("express");
 const router = express.Router();
-const foodController = require("../controllers/food.controller");
-const {
-  authUserMiddleware,
-  authFoodPartnerMiddleware,
-} = require("../middlewares/auth.middleware");
 const multer = require("multer");
-
 const upload = multer({ storage: multer.memoryStorage() });
 
-/* CREATE FOOD (Partner) */
+const {authUserMiddleware,authFoodPartnerMiddleware }= require("../middlewares/auth.middleware");
+
+const {
+  createFood,
+  getFoodItems,
+  getFoodPartnerDetails,
+  likeFood,
+  saveFood,
+  addComment,
+  getComments,
+  followPartner,
+  unfollowPartner,
+  getMyUploads,
+  getOrderAnalytics,
+  getOrderTrends
+
+} = require("../controllers/food.controller");
+
+// FEED
+router.get("/", getFoodItems);
+
+// FOOD PARTNER PUBLIC PAGE
+router.get("/partner/:id", getFoodPartnerDetails);
+
+// CREATE FOOD (PARTNER)
 router.post(
   "/create",
   authFoodPartnerMiddleware,
-  upload.single("file"),
-  foodController.createFood
+  upload.single("video"),
+  createFood
 );
 
-/* GET ALL FOOD ITEMS (For Users) */
-router.get("/food", authUserMiddleware, foodController.getFoodItems);
 
-/* LIKE FOOD */
-router.post("/like", authUserMiddleware, foodController.likeFood);
+// LIKE / SAVE
+router.post("/like", authUserMiddleware, likeFood);
+router.post("/save", authUserMiddleware, saveFood);
 
-/* SAVE FOOD */
-router.post("/save", authUserMiddleware, foodController.saveFood);
-router.get("/save", authUserMiddleware, foodController.getSaveFood);
+// COMMENTS
+router.post("/comment", authUserMiddleware, addComment);
+router.get("/comments/:foodId", getComments);
 
-/* GET FOOD PARTNER DETAILS + THEIR FOODS */
-router.get(
-  "/partner/:id",
-  authUserMiddleware,
-  foodController.getFoodPartnerDetails
-);
-
-/* COMMENTS */
-router.post("/comment", authUserMiddleware, foodController.addComment);
-router.get("/:foodId/comments", authUserMiddleware, foodController.getComments);
-
-/* UPDATE FOOD (Partner Only) */
-router.put(
-  "/:id",
-  authFoodPartnerMiddleware,
-  upload.single("file"),
-  foodController.updateFood
-);
-
-/* DELETE FOOD (Partner Only) */
-router.delete("/:id", authFoodPartnerMiddleware, foodController.deleteFood);
-
-/* GET MY UPLOADS (Partner Only) */
+// FOLLOW / UNFOLLOW
+router.post("/follow", authUserMiddleware, followPartner);
+router.post("/unfollow", authUserMiddleware, unfollowPartner);
 router.get(
   "/my-uploads",
   authFoodPartnerMiddleware,
-  foodController.getMyUploads
-);
-router.post("/follow",
-  auth.middleware.authUserMiddleware,
-  foodController.followPartner
-);
-
-router.post("/unfollow",
-  auth.middleware.authUserMiddleware,
-  foodController.unfollowPartner
+  getMyUploads
 );
 
 router.get(
-  "/food/recommended",
-  authMiddleware.authUserMiddleware,
-  foodController.getRecommendedFeed
+  "/analytics",
+  authFoodPartnerMiddleware,
+  getOrderAnalytics
+);
+
+router.get(
+  "/analytics/trends",
+  authFoodPartnerMiddleware,
+  getOrderTrends
 );
 
 

@@ -41,7 +41,7 @@ const CreateFood = () => {
     formData.append("orderLink", orderLink);
     formData.append("category", category);
     formData.append("foodPartner", foodPartner._id);
-    formData.append("file", videoFile); // 🔥 Correct field name for backend
+    formData.append("video", videoFile); // 🔥 Correct field name for backend
 
     try {
       const res = await axios.post(
