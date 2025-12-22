@@ -112,3 +112,30 @@
     padding: 10px;
   }
 }
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.pagination button {
+  padding: 6px 14px;
+  border: none;
+  background: #222;
+  color: #fff;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.pagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.badge.zomato { color: #e23744; }
+.badge.swiggy { color: #f57c00; }
+.badge.call { color: #2e7d32; }
+.badge.inquiry { color: #555; }

@@ -10,16 +10,31 @@ const OrderIntentDashboard = () => {
     call: 0,
     inquiry: 0
   });
+
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
+
+  const limit = 10;
 
   const fetchData = async () => {
     try {
+      setLoading(true);
+
       const [intentRes, analyticsRes] = await Promise.all([
-        api.get("/order-intent/partner", { withCredentials: true }),
-        api.get("/order-intent/analytics", { withCredentials: true })
+        api.get(
+          `/order-intent/partner?page=${page}&limit=${limit}`,
+          { withCredentials: true }
+        ),
+        api.get(
+          "/order-intent/analytics",
+          { withCredentials: true }
+        )
       ]);
 
       setIntents(intentRes.data.intents || []);
+      setPage(intentRes.data.page || 1);
+      setTotalPages(intentRes.data.totalPages || 1);
       setAnalytics(analyticsRes.data.analytics || {});
     } catch (err) {
       console.error("OrderIntent fetch error", err);
@@ -31,7 +46,7 @@ const OrderIntentDashboard = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [page]);
 
   if (loading) {
     return <div className="order-intent-page">Loading...</div>;
@@ -53,26 +68,51 @@ const OrderIntentDashboard = () => {
       {intents.length === 0 ? (
         <p className="empty-text">No order intents yet</p>
       ) : (
-        <table className="intent-table">
-          <thead>
-            <tr>
-              <th>Food</th>
-              <th>Method</th>
-              <th>User</th>
-              <th>Time</th>
-            </tr>
-          </thead>
-          <tbody>
-            {intents.map(i => (
-              <tr key={i.id}>
-                <td>{i.foodName}</td>
-                <td className={`method ${i.method}`}>{i.method.toUpperCase()}</td>
-                <td>{i.user}</td>
-                <td>{new Date(i.time).toLocaleString()}</td>
+        <>
+          <table className="intent-table">
+            <thead>
+              <tr>
+                <th>Food</th>
+                <th>Method</th>
+                <th>User</th>
+                <th>Time</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {intents.map(i => (
+                <tr key={i.id}>
+                  <td>{i.foodName}</td>
+                  <td className={`method ${i.method}`}>
+                    {i.method.toUpperCase()}
+                  </td>
+                  <td>{i.user}</td>
+                  <td>{new Date(i.time).toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* PAGINATION */}
+          <div className="pagination">
+            <button
+              disabled={page === 1}
+              onClick={() => setPage(p => p - 1)}
+            >
+              Prev
+            </button>
+
+            <span>
+              Page {page} of {totalPages}
+            </span>
+
+            <button
+              disabled={page === totalPages}
+              onClick={() => setPage(p => p + 1)}
+            >
+              Next
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

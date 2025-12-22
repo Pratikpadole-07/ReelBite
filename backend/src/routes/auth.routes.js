@@ -7,6 +7,8 @@ const {
   authFoodPartnerMiddleware
 } = require("../middlewares/auth.middleware");
 
+const { loginLimiter } = require("../middlewares/rateLimit.middleware")
+
 const userModel = require("../models/user.model");
 const foodPartnerModel = require("../models/foodpartner.model");
 
@@ -19,7 +21,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.post("/user/register", authController.registerUser);
 
 // Login user
-router.post("/user/login", authController.loginUser);
+router.post("/user/login",loginLimiter, authController.loginUser);
 
 // Logout user
 router.get("/user/logout", authController.logoutUser);
@@ -44,7 +46,7 @@ router.get("/user/me", authUserMiddleware, async (req, res) => {
 router.post("/food-partner/register", authController.registerFoodPartner);
 
 // Login partner
-router.post("/food-partner/login", authController.loginFoodPartner);
+router.post("/food-partner/login",loginLimiter, authController.loginFoodPartner);
 
 // Logout partner
 router.get("/food-partner/logout", authController.logoutFoodPartner);

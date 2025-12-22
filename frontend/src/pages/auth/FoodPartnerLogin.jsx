@@ -19,9 +19,17 @@ const FoodPartnerLogin = () => {
       await loginFoodPartner(email, password); // ✅ CONTEXT CONTROLS LOGIN
       navigate("/food-partner/profile");       // or dashboard route
     } catch (err) {
-      console.error("Partner login failed:", err);
-      setError("Invalid email or password ❌");
-    }
+  const status = err.response?.status;
+  const message = err.response?.data?.message;
+
+  if (status === 429) {
+    setError(message || "Too many attempts. Try later.");
+  } else if (status === 400) {
+    setError("Invalid email or password ❌");
+  } else {
+    setError("Something went wrong. Try again.");
+  }
+}
   };
 
   return (

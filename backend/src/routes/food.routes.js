@@ -4,6 +4,7 @@ const multer = require("multer");
 const upload = multer({ storage: multer.memoryStorage() });
 
 const {authUserMiddleware,authFoodPartnerMiddleware }= require("../middlewares/auth.middleware");
+const { commentLimiter } = require("../middlewares/rateLimit.middleware");
 
 const {
   createFood,
@@ -41,7 +42,12 @@ router.post("/like", authUserMiddleware, likeFood);
 router.post("/save", authUserMiddleware, saveFood);
 
 // COMMENTS
-router.post("/comment", authUserMiddleware, addComment);
+router.post(
+  "/comment",
+  authUserMiddleware,
+  commentLimiter,
+  addComment
+);
 router.get("/comments/:foodId", getComments);
 
 // FOLLOW / UNFOLLOW
