@@ -4,27 +4,36 @@ import api from "../assets/api/api";
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+
+  console.log("AUTH PROVIDER MOUNTED");
+
   const [user, setUser] = useState(null);
   const [foodPartner, setFoodPartner] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchAuth = async () => {
+  /* ================= RESTORE SESSION ================= */
+const fetchAuth = async () => {
+  try {
+    const resUser = await api.get("/auth/user/me");
+    console.log("USER ME RESPONSE:", resUser.data);
+    setUser(resUser.data.user);
+    setFoodPartner(null);
+    setLoading(false);
+    return;
+  } catch {}
+
   try {
     const resPartner = await api.get("/auth/food-partner/me");
     setFoodPartner(resPartner.data.foodPartner);
     setUser(null);
-  } catch {
-    try {
-      const resUser = await api.get("/auth/user/me");
-      setUser(resUser.data.user);
-      setFoodPartner(null);
-    } catch {
-      setUser(null);
-      setFoodPartner(null);
-    }
-  } finally {
     setLoading(false);
-  }
+    return;
+  } catch {}
+
+  // Only here you are truly unauthenticated
+  setUser(null);
+  setFoodPartner(null);
+  setLoading(false);
 };
 
 
@@ -32,8 +41,8 @@ export const AuthProvider = ({ children }) => {
     fetchAuth();
   }, []);
 
-  // ---------- LOGIN ----------
-  const login = async (email, password) => {
+  /* ================= LOGIN ================= */
+  const loginUser = async (email, password) => {
     const res = await api.post(
       "/auth/user/login",
       { email, password },
@@ -55,17 +64,19 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  // ---------- LOGOUT ----------
+  /* ================= LOGOUT ================= */
   const logout = async () => {
     try {
-      if (user) await api.get("/auth/user/logout", { withCredentials: true });
-      if (foodPartner)
+      if (user) {
+        await api.get("/auth/user/logout", { withCredentials: true });
+      }
+      if (foodPartner) {
         await api.get("/auth/food-partner/logout", { withCredentials: true });
+      }
     } catch {}
 
     setUser(null);
     setFoodPartner(null);
-    window.location.href = "/";
   };
 
   return (
@@ -74,7 +85,7 @@ export const AuthProvider = ({ children }) => {
         user,
         foodPartner,
         loading,
-        login,
+        loginUser,
         loginFoodPartner,
         logout
       }}

@@ -19,7 +19,7 @@ const ChooseRegister = () => {
           </Link>
         </div>
         <div className="auth-alt-action" style={{marginTop:'4px'}}>
-          Already have an account? <Link to="/user/login">Sign in</Link>
+          Already have an account? <Link to="/login">Sign in</Link>
         </div>
       </div>
     </div>

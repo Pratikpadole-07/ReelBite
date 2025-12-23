@@ -1,39 +1,45 @@
 const rateLimit = require("express-rate-limit");
 
 /* ---------------- LOGIN LIMIT ---------------- */
-// 5 attempts per 10 minutes per IP
+// 5 attempts per 10 minutes
 const loginLimiter = rateLimit({
-  windowMs: 10 * 60 * 1000, // 10 minutes
+  windowMs: 10 * 60 * 1000,
   max: 5,
-  message: {
-    message: "Too many login attempts. Try again after 10 minutes."
-  },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  handler: (req, res) => {
+    return res.status(429).json({
+      message: "Too many login attempts. Try again after 10 minutes."
+    });
+  }
 });
 
 /* ---------------- ORDER INTENT LIMIT ---------------- */
-// 20 intents per hour per user/IP
+// 20 per hour
 const orderIntentLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
+  windowMs: 60 * 60 * 1000,
   max: 20,
-  message: {
-    message: "Too many order attempts. Please slow down."
-  },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  handler: (req, res) => {
+    return res.status(429).json({
+      message: "Too many order intents. Slow down."
+    });
+  }
 });
 
 /* ---------------- COMMENT LIMIT ---------------- */
-// 10 comments per minute per user/IP
+// 10 per minute
 const commentLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
+  windowMs: 60 * 1000,
   max: 10,
-  message: {
-    message: "Commenting too fast. Take a breath."
-  },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  handler: (req, res) => {
+    return res.status(429).json({
+      message: "Commenting too fast. Take a breath."
+    });
+  }
 });
 
 module.exports = {

@@ -38,4 +38,5 @@ const foodPartnerSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("foodpartner", foodPartnerSchema);
+module.exports = mongoose.model("FoodPartner", foodPartnerSchema);
+

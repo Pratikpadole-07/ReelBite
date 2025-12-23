@@ -1,29 +1,30 @@
-import React, { useEffect, useState } from "react"
-import api from "../../assets/api/api"
-import "../../styles/orders.css"
+import React, { useEffect, useState } from "react";
+import api from "../../assets/api/api";
+import "../../styles/orders.css";
 
 const statusColor = {
-  pending: "#f4c542",
-  accepted: "#4caf50",
-  delivered: "#2196f3",
-  cancelled: "#d9534f"
-}
+  pending: "#9e9e9e",
+  accepted: "#2196f3",
+  preparing: "#ff9800",
+  completed: "#4caf50",
+  rejected: "#f44336"
+};
 
 const UserOrders = () => {
-  const [orders, setOrders] = useState([])
+  const [orders, setOrders] = useState([]);
 
   const fetchOrders = async () => {
     try {
-      const res = await api.get("/order/my")
-      setOrders(res.data.orders || [])
+      const res = await api.get("/order/my");
+      setOrders(res.data.orders || []);
     } catch {
-      setOrders([])
+      setOrders([]);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchOrders()
-  }, [])
+    fetchOrders();
+  }, []);
 
   return (
     <div className="orders-page">
@@ -41,7 +42,7 @@ const UserOrders = () => {
                 <p>₹ {o.food.price}</p>
                 <span
                   className="status"
-                  style={{ background: statusColor[o.status] }}
+                  style={{ backgroundColor: statusColor[o.status] }}
                 >
                   {o.status.toUpperCase()}
                 </span>
@@ -51,7 +52,7 @@ const UserOrders = () => {
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default UserOrders
+export default UserOrders;

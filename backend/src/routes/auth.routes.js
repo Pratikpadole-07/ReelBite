@@ -1,32 +1,19 @@
 const express = require("express");
 const router = express.Router();
-
 const authController = require("../controllers/auth.controller");
 const {
   authUserMiddleware,
   authFoodPartnerMiddleware
 } = require("../middlewares/auth.middleware");
-
-const { loginLimiter } = require("../middlewares/rateLimit.middleware")
-
-const userModel = require("../models/user.model");
-const foodPartnerModel = require("../models/foodpartner.model");
-
+const { loginLimiter } = require("../middlewares/rateLimit.middleware");
 const multer = require("multer");
 const upload = multer({ storage: multer.memoryStorage() });
 
-/* ================= USER ROUTES ================= */
-
-// Register user
+/* USER */
 router.post("/user/register", authController.registerUser);
-
-// Login user
-router.post("/user/login",loginLimiter, authController.loginUser);
-
-// Logout user
+router.post("/user/login", authController.loginUser);
 router.get("/user/logout", authController.logoutUser);
-
-// Upload avatar
+router.get("/user/me", authUserMiddleware, authController.getCurrentUser);
 router.post(
   "/user/avatar",
   authUserMiddleware,
@@ -34,47 +21,20 @@ router.post(
   authController.updateUserAvatar
 );
 
-// Get current user
-router.get("/user/me", authUserMiddleware, async (req, res) => {
-  const user = await userModel.findById(req.user._id).select("-password");
-  res.json({ user });
-});
-
-/* ================= FOOD PARTNER ROUTES ================= */
-
-// Register partner
+/* FOOD PARTNER */
 router.post("/food-partner/register", authController.registerFoodPartner);
-
-// Login partner
-router.post("/food-partner/login",loginLimiter, authController.loginFoodPartner);
-
-// Logout partner
+router.post("/food-partner/login", loginLimiter, authController.loginFoodPartner);
 router.get("/food-partner/logout", authController.logoutFoodPartner);
-
-// Get current partner
 router.get(
   "/food-partner/me",
   authFoodPartnerMiddleware,
-  async (req, res) => {
-    const partner = await foodPartnerModel
-      .findById(req.user._id)
-      .select("-password");
-
-    if (!partner) {
-      return res.status(404).json({ message: "Not found" });
-    }
-
-    res.json({ foodPartner: partner });
-  }
+  authController.getCurrentFoodPartner
 );
-
-// Update partner profile
 router.put(
   "/food-partner/update",
   authFoodPartnerMiddleware,
   upload.single("logo"),
   authController.updateFoodPartnerProfile
 );
-console.log("AUTH CONTROLLER:", authController);
 
 module.exports = router;

@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../assets/api/api";
 import CommentModal from "./CommentModal";
-import OrderModal from "./OrderModal";
 
 const ReelFeed = ({
   items = [],
@@ -12,7 +11,7 @@ const ReelFeed = ({
   isLoading = false,
 }) => {
   const [activeCommentFoodId, setActiveCommentFoodId] = useState(null);
-  const [orderFood, setOrderFood] = useState(null);
+  const [placingOrderId, setPlacingOrderId] = useState(null);
 
   const videoRefs = useRef(new Map());
 
@@ -37,68 +36,24 @@ const ReelFeed = ({
   }, [items]);
 
   const registerVideoRef = id => el => {
-    if (!el) {
-      videoRefs.current.delete(id);
-    } else {
-      videoRefs.current.set(id, el);
+    if (!el) videoRefs.current.delete(id);
+    else videoRefs.current.set(id, el);
+  };
+
+  /* ---------------- PLACE ORDER ---------------- */
+  const placeOrder = async (foodId) => {
+    try {
+      setPlacingOrderId(foodId);
+      await api.post("/order", { foodId });
+      alert("Order placed successfully");
+    } catch (err) {
+      console.error(err.response?.data || err);
+      alert(err.response?.data?.message || "Failed to place order");
+      }
+      finally {
+      setPlacingOrderId(null);
     }
   };
-const getOrderMethods = (food) => {
-  const partner = food.foodPartner || {};
-  const links = partner.orderLinks || {};
-
-  return [
-    links.zomato && {
-      label: "Zomato",
-      method: "zomato",
-      url: links.zomato,
-    },
-    links.swiggy && {
-      label: "Swiggy",
-      method: "swiggy",
-      url: links.swiggy,
-    },
-    links.website && {
-      label: "Website",
-      method: "website",
-      url: links.website,
-    },
-    partner.phone && {
-      label: "Call Now",
-      method: "call",
-      url: `tel:${partner.phone}`,
-    },
-  ].filter(Boolean);
-};
-
-
-  /* ---------------- ORDER INTENT ---------------- */
-const handleOrderConfirm = async (method, url) => {
-  if (!orderFood) return;
-
-  try {
-    await api.post(
-      "/order-intent",
-      {
-        foodId: orderFood._id,
-        partnerId: orderFood.foodPartner?._id,
-        method,
-      },
-      { withCredentials: true }
-    );
-
-    if (!url) {
-      alert("Order link not available");
-      return;
-    }
-
-    window.open(url, "_blank");
-    setOrderFood(null);
-  } catch (err) {
-    alert("Login required to place order");
-  }
-};
-
 
   /* ---------------- STATES ---------------- */
   if (isLoading) {
@@ -156,9 +111,10 @@ const handleOrderConfirm = async (method, url) => {
 
                 <button
                   className="order-btn"
-                  onClick={() => setOrderFood(item)}
+                  disabled={placingOrderId === item._id}
+                  onClick={() => placeOrder(item._id)}
                 >
-                  Order →
+                  {placingOrderId === item._id ? "Placing..." : "Order Now"}
                 </button>
               </div>
             </div>
@@ -170,13 +126,6 @@ const handleOrderConfirm = async (method, url) => {
         foodId={activeCommentFoodId}
         isOpen={!!activeCommentFoodId}
         onClose={() => setActiveCommentFoodId(null)}
-      />
-
-      <OrderModal
-        isOpen={!!orderFood}
-        methods={orderFood ? getOrderMethods(orderFood) : []}
-        onClose={() => setOrderFood(null)}
-        onConfirm={handleOrderConfirm}
       />
     </div>
   );

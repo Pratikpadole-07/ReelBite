@@ -6,7 +6,7 @@ const orderSchema = new mongoose.Schema({
   partner: { type: mongoose.Schema.Types.ObjectId, ref: "FoodPartner", required: true },
   status: {
     type: String,
-    enum: ["Pending", "Accepted", "Rejected", "Delivered"],
+    enum: ["pending", "accepted", "preparing", "completed", "rejected"],
     default: "Pending"
   }
 }, { timestamps: true });

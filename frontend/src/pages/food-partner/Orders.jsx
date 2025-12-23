@@ -1,34 +1,31 @@
-import React, { useEffect, useState } from "react"
-import api from "../../assets/api/api"
-import "../../styles/orders.css"
+import React, { useEffect, useState } from "react";
+import api from "../../assets/api/api";
+import "../../styles/orders.css";
 
 const PartnerOrders = () => {
-  const [orders, setOrders] = useState([])
+  const [orders, setOrders] = useState([]);
 
   const fetchOrders = async () => {
     try {
-      const res = await api.get("/order/partner")
-      setOrders(res.data.orders || [])
+      const res = await api.get("/order/partner");
+      setOrders(res.data.orders || []);
     } catch {
-      setOrders([])
+      setOrders([]);
     }
-  }
+  };
 
   const updateStatus = async (orderId, status) => {
-    const prev = [...orders]
-    setOrders(prev.map(o => o._id === orderId ? { ...o, status } : o))
-
-    try {
-      await api.patch("/order/status", { orderId, status })
-    } catch (err) {
-      console.log("Fail", err)
-      setOrders(prev)
-    }
-  }
+    await api.patch("/order/status", { orderId, status });
+    setOrders(prev =>
+      prev.map(o =>
+        o._id === orderId ? { ...o, status } : o
+      )
+    );
+  };
 
   useEffect(() => {
-    fetchOrders()
-  }, [])
+    fetchOrders();
+  }, []);
 
   return (
     <div className="orders-page">
@@ -54,6 +51,8 @@ const PartnerOrders = () => {
                 <td>{o.user.name}</td>
                 <td>{o.status.toUpperCase()}</td>
                 <td>
+
+                  {/* PENDING */}
                   {o.status === "pending" && (
                     <>
                       <button
@@ -64,21 +63,46 @@ const PartnerOrders = () => {
                       </button>
                       <button
                         className="red"
-                        onClick={() => updateStatus(o._id, "cancelled")}
+                        onClick={() => updateStatus(o._id, "rejected")}
                       >
-                        Cancel
+                        Reject
                       </button>
                     </>
                   )}
+
+                  {/* ACCEPTED */}
+                  {o.status === "accepted" && (
+                    <button
+                      className="orange"
+                      onClick={() => updateStatus(o._id, "preparing")}
+                    >
+                      Start Preparing
+                    </button>
+                  )}
+
+                  {/* PREPARING */}
+                  {o.status === "preparing" && (
+                    <button
+                      className="green"
+                      onClick={() => updateStatus(o._id, "completed")}
+                    >
+                      Mark Completed
+                    </button>
+                  )}
+
+                  {/* COMPLETED / REJECTED */}
+                  {(o.status === "completed" || o.status === "rejected") && (
+                    <span className="status-done">No actions</span>
+                  )}
+
                 </td>
               </tr>
             ))}
           </tbody>
-
         </table>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default PartnerOrders
+export default PartnerOrders;

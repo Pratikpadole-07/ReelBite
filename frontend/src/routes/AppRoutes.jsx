@@ -4,27 +4,27 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
-  Navigate,
-  useLocation,
+  Navigate
 } from "react-router-dom";
 
 import { AuthContext } from "../context/AuthContext";
 
 /* Auth Pages */
 import ChooseRegister from "../pages/auth/ChooseRegister";
+import ChooseLogin from "../pages/auth/ChooseLogin";
 import UserRegister from "../pages/auth/UserRegister";
 import UserLogin from "../pages/auth/UserLogin";
 import FoodPartnerRegister from "../pages/auth/FoodPartnerRegister";
 import FoodPartnerLogin from "../pages/auth/FoodPartnerLogin";
 
-/* General Pages */
+/* User Pages */
 import Home from "../pages/general/Home";
 import Saved from "../pages/general/Saved";
-import Search from "../pages/general/Search";
 import UserProfile from "../pages/general/UserProfile";
 import UserOrders from "../pages/general/Orders";
+import Search from "../pages/general/Search";
 
-/* Food Partner Pages */
+/* Partner Pages */
 import CreateFood from "../pages/food-partner/createFood";
 import RestaurantProfile from "../pages/food-partner/RestaurantProfile";
 import EditRestaurant from "../pages/food-partner/EditRestaurant";
@@ -38,23 +38,23 @@ import BottomNav from "../components/BottomNav";
 import PartnerNavWrapper from "../pages/food-partner/PartnerNavWrapper";
 
 /* -------------------- */
-/* Private Route Guard  */
+/* Private Route Guard */
 /* -------------------- */
-const PrivateRoute = ({ children }) => {
+const PrivateRoute = ({ children, role }) => {
   const { user, foodPartner, loading } = useContext(AuthContext);
-  const location = useLocation();
 
   if (loading) return <h3>Loading...</h3>;
 
-  const isPartnerRoute = location.pathname.startsWith("/food-partner");
-
   if (!user && !foodPartner) {
-    return (
-      <Navigate
-        to={isPartnerRoute ? "/food-partner/login" : "/user/login"}
-        replace
-      />
-    );
+    return <Navigate to="/register" replace />;
+  }
+
+  if (role === "user" && !user) {
+    return <Navigate to="/register" replace />;
+  }
+
+  if (role === "partner" && !foodPartner) {
+    return <Navigate to="/register" replace />;
   }
 
   return children;
@@ -68,55 +68,18 @@ const AppRoutes = () => {
     <Router>
       <Routes>
 
-        {/* -------- Public -------- */}
+        {/* ---------- ENTRY ---------- */}
+        <Route path="/" element={<Navigate to="/register" replace />} />
+
+        {/* ---------- PUBLIC ---------- */}
         <Route path="/register" element={<ChooseRegister />} />
+        <Route path="/login" element={<ChooseLogin />} />
+
         <Route path="/user/register" element={<UserRegister />} />
         <Route path="/user/login" element={<UserLogin />} />
+
         <Route path="/food-partner/register" element={<FoodPartnerRegister />} />
         <Route path="/food-partner/login" element={<FoodPartnerLogin />} />
-
-        {/* -------- User Protected -------- */}
-        <Route
-          path="/"
-          element={
-            <PrivateRoute>
-              <>
-                <TopNav />
-                <Home />
-              </>
-            </PrivateRoute>
-          }
-        />
-
-        <Route
-          path="/saved"
-          element={
-            <PrivateRoute>
-              <>
-                <TopNav />
-                <Saved />
-              </>
-            </PrivateRoute>
-          }
-        />
-
-        <Route
-          path="/profile"
-          element={
-            <PrivateRoute>
-              <UserProfile />
-            </PrivateRoute>
-          }
-        />
-
-        <Route
-          path="/orders"
-          element={
-            <PrivateRoute>
-              <UserOrders />
-            </PrivateRoute>
-          }
-        />
 
         <Route
           path="/search"
@@ -128,22 +91,54 @@ const AppRoutes = () => {
           }
         />
 
-        {/* -------- Food Partner Protected -------- */}
+        {/* ---------- USER PROTECTED ---------- */}
         <Route
-          path="/food-partner/:id"
+          path="/home"
           element={
-            <PrivateRoute>
-              <PartnerNavWrapper>
-                <RestaurantProfile />
-              </PartnerNavWrapper>
+            <PrivateRoute role="user">
+              <>
+                <TopNav />
+                <Home />
+              </>
             </PrivateRoute>
           }
         />
 
         <Route
+          path="/saved"
+          element={
+            <PrivateRoute role="user">
+              <>
+                <TopNav />
+                <Saved />
+              </>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/profile"
+          element={
+            <PrivateRoute role="user">
+              <UserProfile />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/orders"
+          element={
+            <PrivateRoute role="user">
+              <UserOrders />
+            </PrivateRoute>
+          }
+        />
+
+        {/* ---------- PARTNER PROTECTED ---------- */}
+        <Route
           path="/food-partner/create-food"
           element={
-            <PrivateRoute>
+            <PrivateRoute role="partner">
               <PartnerNavWrapper>
                 <CreateFood />
               </PartnerNavWrapper>
@@ -154,7 +149,7 @@ const AppRoutes = () => {
         <Route
           path="/food-partner/my-uploads"
           element={
-            <PrivateRoute>
+            <PrivateRoute role="partner">
               <PartnerNavWrapper>
                 <MyUploads />
               </PartnerNavWrapper>
@@ -165,7 +160,7 @@ const AppRoutes = () => {
         <Route
           path="/food-partner/order-intents"
           element={
-            <PrivateRoute>
+            <PrivateRoute role="partner">
               <PartnerNavWrapper>
                 <OrderIntentDashboard />
               </PartnerNavWrapper>
@@ -176,7 +171,7 @@ const AppRoutes = () => {
         <Route
           path="/food-partner/orders"
           element={
-            <PrivateRoute>
+            <PrivateRoute role="partner">
               <PartnerNavWrapper>
                 <PartnerOrders />
               </PartnerNavWrapper>
@@ -187,7 +182,7 @@ const AppRoutes = () => {
         <Route
           path="/food-partner/edit"
           element={
-            <PrivateRoute>
+            <PrivateRoute role="partner">
               <PartnerNavWrapper>
                 <EditRestaurant />
               </PartnerNavWrapper>
@@ -195,8 +190,19 @@ const AppRoutes = () => {
           }
         />
 
-        {/* -------- Fallback -------- */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route
+          path="/food-partner/:id"
+          element={
+            <PrivateRoute role="partner">
+              <PartnerNavWrapper>
+                <RestaurantProfile />
+              </PartnerNavWrapper>
+            </PrivateRoute>
+          }
+        />
+
+        {/* ---------- FALLBACK ---------- */}
+        <Route path="*" element={<Navigate to="/register" replace />} />
 
       </Routes>
     </Router>

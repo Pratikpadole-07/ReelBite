@@ -104,7 +104,7 @@ const RestaurantProfileSelf = () => {
               </div>
               <div>
                 <h4>Total Revenue</h4>
-                <p style={{ fontSize: 26 }}>₹{analytics.totalRevenue}</p>
+                <p style={{ fontSize: 26 }}>Rs.{analytics.totalRevenue}</p>
               </div>
             </div>
           )}
