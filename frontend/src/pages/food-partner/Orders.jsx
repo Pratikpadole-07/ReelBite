@@ -94,6 +94,15 @@ const PartnerOrders = () => {
                   {(o.status === "completed" || o.status === "rejected") && (
                     <span className="status-done">No actions</span>
                   )}
+                  {o.statusHistory && (
+                    <ul className="status-history">
+                      {o.statusHistory.map((h, i) => (
+                        <li key={i}>
+                          {h.status.toUpperCase()} – {formatTime(h.at)}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
 
                 </td>
               </tr>

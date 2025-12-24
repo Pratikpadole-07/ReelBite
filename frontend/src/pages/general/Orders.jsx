@@ -9,6 +9,11 @@ const statusColor = {
   completed: "#4caf50",
   rejected: "#f44336"
 };
+const formatTime = (date) =>
+  new Date(date).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
 
 const UserOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -46,6 +51,17 @@ const UserOrders = () => {
                 >
                   {o.status.toUpperCase()}
                 </span>
+                {o.statusHistory && o.statusHistory.length > 0 && (
+                  <ul className="status-history">
+                    {o.statusHistory.map((h, i) => (
+                      <li key={i}>
+                        <strong>{h.status.toUpperCase()}</strong>
+                        <span> · {formatTime(h.at)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
               </div>
             </div>
           ))}

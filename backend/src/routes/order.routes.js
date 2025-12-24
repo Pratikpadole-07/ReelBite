@@ -6,7 +6,9 @@ const {
   createOrder,
   getUserOrders,
   getPartnerOrders,
-  updateOrderStatus
+  updateOrderStatus,
+  getPartnerDashboardStats,
+  getPartnerOrderAnalytics
 } = require("../controllers/order.controller");
 
 /* MIDDLEWARES */
@@ -22,5 +24,16 @@ router.get("/my", authUserMiddleware, getUserOrders);
 /* ================= PARTNER ROUTES ================= */
 router.get("/partner", authFoodPartnerMiddleware, getPartnerOrders);
 router.patch("/status", authFoodPartnerMiddleware, updateOrderStatus);
+router.get(
+  "/partner/stats",
+  authFoodPartnerMiddleware,
+  getPartnerDashboardStats
+);
+router.get(
+  "/partner/analytics",
+  authFoodPartnerMiddleware,
+  getPartnerOrderAnalytics
+);
+
 
 module.exports = router;

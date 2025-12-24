@@ -62,3 +62,14 @@
   padding: 6px 10px;
   border-radius: 6px;
 }
+.status-history {
+  margin-top: 6px;
+  padding-left: 0;
+  list-style: none;
+  font-size: 12px;
+  color: #666;
+}
+
+.status-history li {
+  line-height: 1.4;
+}

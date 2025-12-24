@@ -59,6 +59,17 @@ const PrivateRoute = ({ children, role }) => {
 
   return children;
 };
+const RootRedirect = () => {
+  const { user, foodPartner, loading } = useContext(AuthContext);
+
+  if (loading) return <h3>Loading...</h3>;
+
+  if (user) return <Navigate to="/home" replace />;
+  if (foodPartner) return <Navigate to="/food-partner/orders" replace />;
+
+  return <Navigate to="/register" replace />;
+};
+
 
 /* -------------------- */
 /* App Routes */
@@ -69,7 +80,7 @@ const AppRoutes = () => {
       <Routes>
 
         {/* ---------- ENTRY ---------- */}
-        <Route path="/" element={<Navigate to="/register" replace />} />
+        <Route path="/" element={<RootRedirect />} />
 
         {/* ---------- PUBLIC ---------- */}
         <Route path="/register" element={<ChooseRegister />} />
