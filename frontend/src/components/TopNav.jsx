@@ -21,6 +21,8 @@ const TopNav = () => {
           <>
             <Link to="/">Home</Link>
             <Link to="/saved">Saved</Link>
+            <Link to="/orders">📦 Orders</Link>
+
           </>
         )}
 

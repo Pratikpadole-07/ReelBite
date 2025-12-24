@@ -18,10 +18,15 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: "https://ui-avatars.com/api/?name=User"
     },
-    following: [{ type: mongoose.Schema.Types.ObjectId, ref: "FoodPartner" }]
+    
+    following: [{ type: mongoose.Schema.Types.ObjectId, ref: "FoodPartner" }],
 
+    savedFoods: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Food"
+    }]
 
-},
+    },
     {
         timestamps: true
     }

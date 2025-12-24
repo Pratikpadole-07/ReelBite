@@ -21,11 +21,10 @@ const PartnerNavbar = () => {
       </div>
 
       <div className="partner-navbar-center">
-        <Link to={`/food-partner/${foodPartner._id}`}>Dashboard</Link>
         <Link to="/food-partner/orders">Orders</Link>
+        <Link to="/food-partner/dashboard">Profile</Link>
         <Link to="/food-partner/create-food">Add Reel</Link>
         <Link to="/food-partner/order-intents">Order Intents</Link>
-
       </div>
 
       <div className="partner-navbar-right">

@@ -1,59 +1,49 @@
-import React, { useEffect, useState } from 'react'
-import '../../styles/reels.css'
-import axios from 'axios'
-import ReelFeed from '../../components/ReelFeed'
-
-const API_URL = "http://localhost:3000/api";
+import React, { useEffect, useState } from "react";
+import "../../styles/reels.css";
+import api from "../../assets/api/api";
+import ReelFeed from "../../components/ReelFeed";
 
 const Saved = () => {
-    const [videos, setVideos] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+  const [videos, setVideos] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        fetchSavedVideos();
-    }, []);
+  useEffect(() => {
+    fetchSavedVideos();
+  }, []);
 
-    const fetchSavedVideos = async () => {
-        setIsLoading(true);
-        try {
-            const response = await axios.get(`${API_URL}/food/save`, { withCredentials: true });
+  const fetchSavedVideos = async () => {
+    setIsLoading(true);
+    try {
+      const res = await api.get("/food/saved");
+      setVideos(res.data.foods || []);
+    } catch (err) {
+      console.error("Saved Fetch Error:", err);
+      setVideos([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-            const savedFoods = response.data.savedFoods.map((item) => ({
-                ...item.food,  // 🔥 full data include
-                _id: item.food._id,
-            }));
+  const removeSaved = async (item) => {
+    try {
+      await api.post("/food/save", { foodId: item._id });
 
-            setVideos(savedFoods);
-        } catch (err) {
-            console.error("Saved Fetch Error:", err);
-        }
-        setIsLoading(false);
-    };
+      setVideos((prev) =>
+        prev.filter((v) => v._id !== item._id)
+      );
+    } catch (err) {
+      console.error("Unsave Error:", err);
+    }
+  };
 
-    const removeSaved = async (item) => {
-        try {
-            await axios.post(
-                `${API_URL}/food/save`,
-                { foodId: item._id },
-                { withCredentials: true }
-            );
-
-            setVideos((prev) =>
-                prev.filter((v) => v._id !== item._id) // 🔥 instantly remove
-            );
-        } catch (err) {
-            console.error("Unsave Error:", err);
-        }
-    };
-
-    return (
-        <ReelFeed
-            items={videos}
-            onSave={removeSaved}
-            emptyMessage="No saved videos yet."
-            isLoading={isLoading}
-        />
-    );
+  return (
+    <ReelFeed
+      items={videos}
+      onSave={removeSaved}
+      emptyMessage="No saved videos yet."
+      isLoading={isLoading}
+    />
+  );
 };
 
 export default Saved;

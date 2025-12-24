@@ -258,3 +258,18 @@
     width: 95%;
   }
 }
+
+.partner-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  margin-top: 6px;
+  color: #ffd54f;
+}
+
+.partner-mini-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}

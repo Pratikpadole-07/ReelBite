@@ -12,6 +12,7 @@ const {
   getFoodPartnerDetails,
   likeFood,
   saveFood,
+  getSavedFoods,
   addComment,
   getComments,
   followPartner,
@@ -40,7 +41,7 @@ router.post(
 // LIKE / SAVE
 router.post("/like", authUserMiddleware, likeFood);
 router.post("/save", authUserMiddleware, saveFood);
-
+router.get("/saved", authUserMiddleware, getSavedFoods);
 // COMMENTS
 router.post(
   "/comment",

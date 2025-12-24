@@ -4,6 +4,23 @@ import "../styles/OrderModal.css";
 const OrderModal = ({ isOpen, methods = [], onClose, onConfirm }) => {
   if (!isOpen) return null;
 
+  const handleClick = (method, url) => {
+    // 1️⃣ Record intent (optional backend call)
+    if (onConfirm) {
+      onConfirm(method);
+    }
+
+    // 2️⃣ Open external link SAFELY
+    if (url) {
+      window.open(url, "_blank", "noopener,noreferrer");
+    } else {
+      alert("Order link not available");
+    }
+
+    // 3️⃣ Close modal
+    onClose();
+  };
+
   return (
     <div className="order-modal-backdrop" onClick={onClose}>
       <div
@@ -19,7 +36,7 @@ const OrderModal = ({ isOpen, methods = [], onClose, onConfirm }) => {
             <button
               key={method}
               className="order-option"
-              onClick={() => onConfirm(method, url)}
+              onClick={() => handleClick(method, url)}
             >
               {label}
             </button>

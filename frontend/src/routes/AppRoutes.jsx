@@ -31,7 +31,7 @@ import EditRestaurant from "../pages/food-partner/EditRestaurant";
 import MyUploads from "../pages/food-partner/MyUploads";
 import PartnerOrders from "../pages/food-partner/Orders";
 import OrderIntentDashboard from "../pages/food-partner/OrderIntentDashboard";
-
+import RestaurantProfilePublic from "../pages/food-partner/RestaurantProfilePublic"
 /* Layout */
 import TopNav from "../components/TopNav";
 import BottomNav from "../components/BottomNav";
@@ -91,6 +91,11 @@ const AppRoutes = () => {
 
         <Route path="/food-partner/register" element={<FoodPartnerRegister />} />
         <Route path="/food-partner/login" element={<FoodPartnerLogin />} />
+        <Route
+          path="/restaurant/:id"
+          element={<RestaurantProfilePublic />}
+        />
+
 
         <Route
           path="/search"
@@ -202,19 +207,20 @@ const AppRoutes = () => {
         />
 
         <Route
-          path="/food-partner/:id"
+          path="/food-partner/dashboard"
           element={
             <PrivateRoute role="partner">
               <PartnerNavWrapper>
                 <RestaurantProfile />
               </PartnerNavWrapper>
-            </PrivateRoute>
+           </PrivateRoute>
           }
         />
 
-        {/* ---------- FALLBACK ---------- */}
-        <Route path="*" element={<Navigate to="/register" replace />} />
 
+
+        {/* ---------- FALLBACK ---------- */}
+        <Route path="*" element={<RootRedirect />} />
       </Routes>
     </Router>
   );

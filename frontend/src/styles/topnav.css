@@ -1,14 +1,23 @@
 .topnav {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #111;
-  color: #fff;
-  padding: 12px 18px;
-  position: sticky;
-  top: 0;
-  z-index: 9999;
-  border-bottom: 1px solid #222;
+
+  height: 56px;
+  padding: 0 20px;
+
+  background-color: #0d0d0d; /* solid background is mandatory */
+  color: #ffffff;
+
+  border-bottom: 1px solid #1f1f1f;
+
+  /* polish */
+  backdrop-filter: blur(0); /* prevents Safari glitches */
+  box-sizing: border-box;
 }
 
 .nav-logo {

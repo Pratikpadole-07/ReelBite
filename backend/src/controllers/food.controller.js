@@ -117,12 +117,16 @@ async function likeFood(req, res) {
 }
 
 /* ====================== SAVE FOOD ====================== */
+/* ====================== SAVE / UNSAVE FOOD ====================== */
 async function saveFood(req, res) {
   if (!req.user) return res.status(401).json({ message: "Unauthorized" });
 
   const { foodId } = req.body;
 
-  const exists = await Save.findOne({ user: req.user._id, food: foodId });
+  const exists = await Save.findOne({
+    user: req.user._id,
+    food: foodId
+  });
 
   if (exists) {
     await Save.deleteOne({ _id: exists._id });
@@ -130,11 +134,34 @@ async function saveFood(req, res) {
     return res.json({ saved: false });
   }
 
-  await Save.create({ user: req.user._id, food: foodId });
+  await Save.create({
+    user: req.user._id,
+    food: foodId
+  });
+
   await Food.findByIdAndUpdate(foodId, { $inc: { savesCount: 1 } });
 
   res.json({ saved: true });
 }
+
+/* ====================== GET SAVED FOODS ====================== */
+async function getSavedFoods(req, res) {
+  if (!req.user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const saved = await Save.find({ user: req.user._id })
+    .populate({
+      path: "food",
+      populate: { path: "foodPartner" }
+    })
+    .sort({ createdAt: -1 });
+
+  const foods = saved.map(s => s.food);
+
+  res.json({ foods });
+}
+
 
 /* ====================== COMMENTS ====================== */
 async function addComment(req, res) {
@@ -278,6 +305,9 @@ async function getOrderTrends(req, res) {
     res.status(500).json({ message: "Failed to fetch trends" });
   }
 }
+
+
+
 /* ====================== EXPORTS ====================== */
 module.exports = {
   createFood,
@@ -285,6 +315,7 @@ module.exports = {
   getFoodPartnerDetails,
   likeFood,
   saveFood,
+  getSavedFoods,
   addComment,
   getComments,
   followPartner,
