@@ -1,6 +1,9 @@
-const Order = require("../models/order.model")
-const Food = require("../models/food.model")
+const Order = require("../models/order.model");
+const Food = require("../models/food.model");
 const mongoose = require("mongoose");
+const { getIO } = require("../socket");
+
+/* ================= CREATE ORDER ================= */
 exports.createOrder = async (req, res) => {
   try {
     const { foodId } = req.body;
@@ -19,7 +22,7 @@ exports.createOrder = async (req, res) => {
       user: req.user._id,
       partner: food.foodPartner._id,
       status: "pending",
-      statusHistory: [{ status: "pending" }]
+      statusHistory: [{ status: "pending", at: new Date() }]
     });
 
     res.status(201).json({ success: true, order });
@@ -29,14 +32,16 @@ exports.createOrder = async (req, res) => {
   }
 };
 
+/* ================= USER ORDERS ================= */
 exports.getUserOrders = async (req, res) => {
   const orders = await Order.find({ user: req.user._id })
     .populate("food", "name price video")
-    .sort({ createdAt: -1 })
+    .sort({ createdAt: -1 });
 
-  res.json({ success: true, orders })
-}
+  res.json({ success: true, orders });
+};
 
+/* ================= PARTNER ORDERS ================= */
 exports.getPartnerOrders = async (req, res) => {
   try {
     const orders = await Order.find({
@@ -53,7 +58,7 @@ exports.getPartnerOrders = async (req, res) => {
   }
 };
 
-
+/* ================= UPDATE ORDER STATUS ================= */
 exports.updateOrderStatus = async (req, res) => {
   const { orderId, status } = req.body;
 
@@ -77,61 +82,74 @@ exports.updateOrderStatus = async (req, res) => {
     return res.status(400).json({ message: "Invalid status transition" });
   }
 
+  // 🔥 CRITICAL FIX
+  if (!order.statusHistory) {
+    order.statusHistory = [];
+  }
+
   order.status = status;
+  order.statusHistory.push({
+    status,
+    at: new Date()
+  });
+
   await order.save();
+
+  const io = getIO();
+
+  io.to(`user:${order.user}`).emit("order-status-updated", {
+    orderId: order._id,
+    status,
+    at: new Date()
+  });
+
+  io.to(`partner:${order.partner}`).emit("order-status-updated", {
+    orderId: order._id,
+    status,
+    at: new Date()
+  });
 
   res.json(order);
 };
 
+/* ================= DASHBOARD STATS ================= */
 exports.getPartnerDashboardStats = async (req, res) => {
   try {
     const partnerId = req.user._id;
 
-    const totalOrders = await Order.countDocuments({
-      partner: partnerId
-    });
+    const totalOrders = await Order.countDocuments({ partner: partnerId });
 
     const activeOrders = await Order.countDocuments({
       partner: partnerId,
       status: { $in: ["pending", "accepted", "preparing"] }
     });
 
-    res.json({
-      totalOrders,
-      activeOrders
-    });
+    res.json({ totalOrders, activeOrders });
   } catch (err) {
     console.error("DASHBOARD STATS ERROR:", err);
     res.status(500).json({ message: "Failed to load dashboard stats" });
   }
 };
 
+/* ================= ANALYTICS ================= */
 exports.getPartnerOrderAnalytics = async (req, res) => {
   try {
     const partnerId = new mongoose.Types.ObjectId(req.user._id);
 
-    // 1. TOTAL ORDERS
-    const totalOrders = await Order.countDocuments({
-      partner: partnerId
-    });
+    const totalOrders = await Order.countDocuments({ partner: partnerId });
 
-    // 2. COMPLETED ORDERS
     const completedOrders = await Order.countDocuments({
       partner: partnerId,
       status: "completed"
     });
 
-    // 3. TOTAL REVENUE
     const revenueAgg = await Order.aggregate([
       {
-        $match: {
-          partner: partnerId,
-          status: "completed"
-        }
+        $match: { partner: partnerId, status: "completed" }
       },
       {
         $lookup: {
-          from: "foods",              // MUST match collection name
+          from: "foods",
           localField: "food",
           foreignField: "_id",
           as: "food"
@@ -148,11 +166,7 @@ exports.getPartnerOrderAnalytics = async (req, res) => {
 
     const totalRevenue = revenueAgg[0]?.totalRevenue || 0;
 
-    res.json({
-      totalOrders,
-      completedOrders,
-      totalRevenue
-    });
+    res.json({ totalOrders, completedOrders, totalRevenue });
   } catch (err) {
     console.error("PARTNER ANALYTICS ERROR:", err);
     res.status(500).json({ message: "Analytics failed" });

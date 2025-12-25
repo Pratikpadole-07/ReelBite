@@ -1,11 +1,12 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import "../../styles/auth-shared.css";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
+import socket from "../../socket";
 
 const FoodPartnerLogin = () => {
   const navigate = useNavigate();
-  const { loginFoodPartner } = useContext(AuthContext);
+  const { loginFoodPartner, foodPartner } = useContext(AuthContext);
   const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
@@ -17,20 +18,22 @@ const FoodPartnerLogin = () => {
 
     try {
       await loginFoodPartner(email, password);
-      navigate("/food-partner/my-uploads"); // ✅ EXISTING ROUTE
+      navigate("/food-partner/my-uploads");
     } catch (err) {
       const status = err.response?.status;
-      const message = err.response?.data?.message;
 
-      if (status === 429) {
-        setError(message || "Too many attempts. Try later.");
-      } else if (status === 400) {
-        setError("Invalid email or password ❌");
-      } else {
-        setError("Something went wrong. Try again.");
-      }
+      if (status === 429) setError("Too many attempts. Try later.");
+      else if (status === 400) setError("Invalid email or password ❌");
+      else setError("Something went wrong. Try again.");
     }
   };
+
+  // ✅ join partner socket room
+  useEffect(() => {
+    if (foodPartner?._id) {
+      socket.emit("join-partner", foodPartner._id);
+    }
+  }, [foodPartner]);
 
   return (
     <div className="auth-page-wrapper">

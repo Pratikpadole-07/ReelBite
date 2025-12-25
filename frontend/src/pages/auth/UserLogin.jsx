@@ -1,11 +1,12 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import "../../styles/auth-shared.css";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
+import socket from "../../socket";
 
 const UserLogin = () => {
   const navigate = useNavigate();
-  const { loginUser } = useContext(AuthContext);
+  const { loginUser, user } = useContext(AuthContext);
   const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
@@ -20,17 +21,19 @@ const UserLogin = () => {
       navigate("/home");
     } catch (err) {
       const status = err.response?.status;
-      const message = err.response?.data?.message;
 
-      if (status === 429) {
-        setError(message || "Too many attempts. Try later.");
-      } else if (status === 400) {
-        setError("Invalid email or password ❌");
-      } else {
-        setError("Login failed. Try again.");
-      }
+      if (status === 429) setError("Too many attempts. Try later.");
+      else if (status === 400) setError("Invalid email or password ❌");
+      else setError("Login failed. Try again.");
     }
   };
+
+  // ✅ join socket AFTER user is available
+  useEffect(() => {
+    if (user?._id) {
+      socket.emit("join-user", user._id);
+    }
+  }, [user]);
 
   return (
     <div className="auth-page-wrapper">
