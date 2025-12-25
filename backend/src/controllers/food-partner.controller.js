@@ -1,27 +1,24 @@
-const foodPartnerModel = require('../models/foodpartner.model');
-const foodModel = require('../models/food.model');
+const FoodPartner = require("../models/foodpartner.model");
+const Food = require("../models/food.model");
 
-async function getFoodPartnerById(req, res) {
+exports.getFoodPartnerById = async (req, res) => {
+  try {
+    const partner = await FoodPartner.findById(req.params.id)
+      .select("-password");
 
-    const foodPartnerId = req.params.id;
-
-    const foodPartner = await foodPartnerModel.findById(foodPartnerId)
-    const foodItemsByFoodPartner = await foodModel.find({ foodPartner: foodPartnerId })
-
-    if (!foodPartner) {
-        return res.status(404).json({ message: "Food partner not found" });
+    if (!partner) {
+      return res.status(404).json({ message: "Restaurant not found" });
     }
 
-    res.status(200).json({
-        message: "Food partner retrieved successfully",
-        foodPartner: {
-            ...foodPartner.toObject(),
-            foodItems: foodItemsByFoodPartner
-        }
+    const foods = await Food.find({ foodPartner: partner._id })
+      .sort({ createdAt: -1 });
 
+    res.json({
+      partner,
+      foods
     });
-}
-
-module.exports = {
-    getFoodPartnerById
+  } catch (err) {
+    console.error("Get partner error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
 };

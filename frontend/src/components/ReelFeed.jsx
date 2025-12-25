@@ -6,8 +6,8 @@ import { AuthContext } from "../context/AuthContext";
 
 const ReelFeed = ({
   items = [],
-  onLike,
-  onSave,
+  onLike = () => {},
+  onSave = () => {},
   emptyMessage = "No reels.",
   isLoading = false
 }) => {
@@ -35,16 +35,23 @@ const ReelFeed = ({
     );
 
     videoRefs.current.forEach(video => observer.observe(video));
-    return () => observer.disconnect();
+
+    return () => {
+      videoRefs.current.forEach(video => observer.unobserve(video));
+      observer.disconnect();
+    };
   }, [items]);
 
   const registerVideoRef = id => el => {
-    if (!el) videoRefs.current.delete(id);
-    else videoRefs.current.set(id, el);
+    if (!el) {
+      videoRefs.current.delete(id);
+    } else {
+      videoRefs.current.set(id, el);
+    }
   };
 
   /* ---------------- PLACE ORDER ---------------- */
-  const placeOrder = async (foodId) => {
+  const placeOrder = async foodId => {
     try {
       setPlacingOrderId(foodId);
       await api.post("/order", { foodId });
@@ -70,7 +77,7 @@ const ReelFeed = ({
   return (
     <div className="reel-page">
       {items.map(item => {
-        const partner = item.foodPartner || {};
+        const partner = item.foodPartner;
 
         return (
           <div key={item._id} className="reel-row">
@@ -100,17 +107,17 @@ const ReelFeed = ({
               <div className="food-info">
                 <h3>{item.name}</h3>
                 {item.description && <p>{item.description}</p>}
-                {item.price && <p>Rs. {item.price}</p>}
+                {item.price && <p>₹ {item.price}</p>}
 
-                {/* PUBLIC RESTAURANT PROFILE */}
-                {partner._id && (
+                {/* PUBLIC RESTAURANT PAGE */}
+                {partner?._id && (
                   <Link
                     to={`/restaurant/${partner._id}`}
                     className="partner-link"
                   >
                     <img
                       src={partner.logo || "https://placehold.co/40x40"}
-                      alt="partner"
+                      alt={partner.name}
                       className="partner-mini-logo"
                     />
                     <span>{partner.name}</span>

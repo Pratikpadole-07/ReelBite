@@ -44,9 +44,7 @@ exports.getUserOrders = async (req, res) => {
 /* ================= PARTNER ORDERS ================= */
 exports.getPartnerOrders = async (req, res) => {
   try {
-    const orders = await Order.find({
-      partner: req.user._id
-    })
+    const orders = await Order.find({ partner: req.user._id })
       .populate("food", "name price")
       .populate("user", "name email")
       .sort({ createdAt: -1 });
@@ -58,17 +56,12 @@ exports.getPartnerOrders = async (req, res) => {
   }
 };
 
-/* ================= UPDATE ORDER STATUS ================= */
+/* ================= UPDATE ORDER STATUS (IDEMPOTENT) ================= */
 exports.updateOrderStatus = async (req, res) => {
-  const { orderId, status } = req.body;
+  const { orderId, status: nextStatus } = req.body;
 
-  if (!orderId || !status) {
+  if (!orderId || !nextStatus) {
     return res.status(400).json({ message: "orderId and status required" });
-  }
-
-  const order = await Order.findById(orderId);
-  if (!order) {
-    return res.status(404).json({ message: "Order not found" });
   }
 
   const validTransitions = {
@@ -77,39 +70,61 @@ exports.updateOrderStatus = async (req, res) => {
     preparing: ["completed"]
   };
 
-  const allowed = validTransitions[order.status];
-  if (!allowed || !allowed.includes(status)) {
+  // 1️⃣ Read current state
+  const order = await Order.findById(orderId);
+  if (!order) {
+    return res.status(404).json({ message: "Order not found" });
+  }
+
+  const currentStatus = order.status;
+  const allowed = validTransitions[currentStatus] || [];
+
+  if (!allowed.includes(nextStatus)) {
     return res.status(400).json({ message: "Invalid status transition" });
   }
 
-  // 🔥 CRITICAL FIX
-  if (!order.statusHistory) {
-    order.statusHistory = [];
+  // 2️⃣ Atomic + idempotent update
+  const updatedOrder = await Order.findOneAndUpdate(
+    {
+      _id: orderId,
+      status: currentStatus,
+      "statusHistory.status": { $ne: nextStatus }
+    },
+    {
+      $set: { status: nextStatus },
+      $push: {
+        statusHistory: {
+          status: nextStatus,
+          at: new Date()
+        }
+      }
+    },
+    { new: true }
+  );
+
+  // 3️⃣ No-op (duplicate request / retry)
+  if (!updatedOrder) {
+    const fresh = await Order.findById(orderId);
+    return res.json({ message: "No state change", order: fresh });
   }
 
-  order.status = status;
-  order.statusHistory.push({
-    status,
-    at: new Date()
-  });
-
-  await order.save();
-
+  // 4️⃣ Emit realtime update
   const io = getIO();
+  const lastEntry = updatedOrder.statusHistory.at(-1);
 
-  io.to(`user:${order.user}`).emit("order-status-updated", {
-    orderId: order._id,
-    status,
-    at: new Date()
+  io.to(`user:${updatedOrder.user}`).emit("order-status-updated", {
+    orderId: updatedOrder._id,
+    status: nextStatus,
+    at: lastEntry.at
   });
 
-  io.to(`partner:${order.partner}`).emit("order-status-updated", {
-    orderId: order._id,
-    status,
-    at: new Date()
+  io.to(`partner:${updatedOrder.partner}`).emit("order-status-updated", {
+    orderId: updatedOrder._id,
+    status: nextStatus,
+    at: lastEntry.at
   });
 
-  res.json(order);
+  res.json(updatedOrder);
 };
 
 /* ================= DASHBOARD STATS ================= */
@@ -144,9 +159,7 @@ exports.getPartnerOrderAnalytics = async (req, res) => {
     });
 
     const revenueAgg = await Order.aggregate([
-      {
-        $match: { partner: partnerId, status: "completed" }
-      },
+      { $match: { partner: partnerId, status: "completed" } },
       {
         $lookup: {
           from: "foods",

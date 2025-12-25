@@ -20,24 +20,21 @@ const RestaurantProfilePublic = () => {
   }, [id, user]);
 
   const fetchData = async () => {
-    try {
-      const res = await api.get(`/food/partner/${id}`);
+  try {
+    const res = await api.get(`/food-partner/${id}`);
 
-      // ✅ correct keys
-      setPartner(res.data.foodPartner);
-      setFoods(res.data.foods || []);
+    setPartner(res.data.partner);
+    setFoods(res.data.foods || []);
 
-      // ✅ use AuthContext user directly
-      if (user?.following) {
-        setIsFollowing(user.following.includes(id));
-      }
-    } catch (err) {
-      console.error("Error loading partner page:", err);
-    } finally {
-      // 🔥 always end loading
-      setLoading(false);
+    if (user?.following) {
+      setIsFollowing(user.following.includes(id));
     }
-  };
+  } catch (err) {
+    console.error("Error loading partner page:", err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const toggleFollow = async () => {
     try {
