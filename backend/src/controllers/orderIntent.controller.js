@@ -1,5 +1,6 @@
-const OrderIntent = require("../models/orderIntent.model");
 const Food = require("../models/food.model");
+const OrderIntent = require("../models/orderIntent.model");
+
 
 async function createOrderIntent(req, res) {
   try {

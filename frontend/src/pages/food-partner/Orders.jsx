@@ -2,23 +2,33 @@ import React, { useEffect, useState } from "react";
 import api from "../../assets/api/api";
 import "../../styles/orders.css";
 
+const STEPS = ["pending", "accepted", "preparing", "completed"];
+
+const formatTime = (date) =>
+  new Date(date).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+
 const PartnerOrders = () => {
   const [orders, setOrders] = useState([]);
 
   const fetchOrders = async () => {
-    try {
-      const res = await api.get("/order/partner");
-      setOrders(res.data.orders || []);
-    } catch {
-      setOrders([]);
-    }
+    const res = await api.get("/order/partner");
+    setOrders(res.data.orders || []);
   };
 
   const updateStatus = async (orderId, status) => {
     await api.patch("/order/status", { orderId, status });
     setOrders(prev =>
       prev.map(o =>
-        o._id === orderId ? { ...o, status } : o
+        o._id === orderId
+          ? {
+              ...o,
+              status,
+              statusHistory: [...o.statusHistory, { status, at: new Date() }]
+            }
+          : o
       )
     );
   };
@@ -31,85 +41,68 @@ const PartnerOrders = () => {
     <div className="orders-page">
       <h2>Incoming Orders</h2>
 
-      {orders.length === 0 ? (
-        <p className="empty-text">No orders from customers</p>
-      ) : (
-        <table className="orders-table">
-          <thead>
-            <tr>
-              <th>Food</th>
-              <th>Customer</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
+      {orders.map(order => {
+        const currentIndex = STEPS.indexOf(order.status);
 
-          <tbody>
-            {orders.map(o => (
-              <tr key={o._id}>
-                <td>{o.food.name}</td>
-                <td>{o.user.name}</td>
-                <td>{o.status.toUpperCase()}</td>
-                <td>
+        return (
+          <div key={order._id} className="order-card">
+            <div className="order-header">
+              <div>
+                <h4>{order.food.name}</h4>
+                <p className="muted">Customer: {order.user.name}</p>
+              </div>
+              <span className="current-status">{order.status.toUpperCase()}</span>
+            </div>
 
-                  {/* PENDING */}
-                  {o.status === "pending" && (
-                    <>
-                      <button
-                        className="green"
-                        onClick={() => updateStatus(o._id, "accepted")}
-                      >
-                        Accept
-                      </button>
-                      <button
-                        className="red"
-                        onClick={() => updateStatus(o._id, "rejected")}
-                      >
-                        Reject
-                      </button>
-                    </>
-                  )}
+            <div className="stepper">
+              {STEPS.map((step, idx) => {
+                const history = order.statusHistory?.find(h => h.status === step);
+                const isDone = idx < currentIndex;
+                const isActive = idx === currentIndex;
 
-                  {/* ACCEPTED */}
-                  {o.status === "accepted" && (
-                    <button
-                      className="orange"
-                      onClick={() => updateStatus(o._id, "preparing")}
-                    >
-                      Start Preparing
-                    </button>
-                  )}
+                return (
+                  <div key={step} className="step">
+                    <div
+                      className={`dot ${
+                        isDone ? "done" : isActive ? "active" : "future"
+                      }`}
+                    />
+                    <span className="label">{step}</span>
+                    {history && (
+                      <span className="time">{formatTime(history.at)}</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
 
-                  {/* PREPARING */}
-                  {o.status === "preparing" && (
-                    <button
-                      className="green"
-                      onClick={() => updateStatus(o._id, "completed")}
-                    >
-                      Mark Completed
-                    </button>
-                  )}
+            <div className="actions">
+              {order.status === "pending" && (
+                <>
+                  <button onClick={() => updateStatus(order._id, "accepted")}>
+                    Accept
+                  </button>
+                  <button className="danger" onClick={() => updateStatus(order._id, "rejected")}>
+                    Reject
+                  </button>
+                </>
+              )}
 
-                  {/* COMPLETED / REJECTED */}
-                  {(o.status === "completed" || o.status === "rejected") && (
-                    <span className="status-done">No actions</span>
-                  )}
-                  {o.statusHistory && (
-                    <ul className="status-history">
-                      {o.statusHistory.map((h, i) => (
-                        <li key={i}>
-                          {h.status.toUpperCase()} – {formatTime(h.at)}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+              {order.status === "accepted" && (
+                <button onClick={() => updateStatus(order._id, "preparing")}>
+                  Start Preparing
+                </button>
+              )}
 
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+              {order.status === "preparing" && (
+                <button onClick={() => updateStatus(order._id, "completed")}>
+                  Mark Completed
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };

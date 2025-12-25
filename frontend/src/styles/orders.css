@@ -119,3 +119,81 @@
   color: #aaa;
   margin-top: 2px;
 }
+.order-card {
+  background: #111;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+  border: 1px solid #222;
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.current-status {
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: #333;
+  font-size: 12px;
+}
+
+.stepper {
+  display: flex;
+  justify-content: space-between;
+  margin: 20px 0;
+}
+
+.step {
+  text-align: center;
+  flex: 1;
+}
+
+.dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  margin: 0 auto 6px;
+}
+
+.dot.done {
+  background: #4caf50;
+}
+
+.dot.active {
+  background: #2196f3;
+}
+
+.dot.future {
+  background: #555;
+}
+
+.label {
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.time {
+  display: block;
+  font-size: 11px;
+  color: #aaa;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.actions button {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.actions .danger {
+  background: #c62828;
+  color: white;
+}
