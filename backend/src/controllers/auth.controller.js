@@ -15,6 +15,10 @@ function safeLog(payload) {
   }
 }
 
+
+const USER_COOKIE = "user_token";
+const PARTNER_COOKIE = "partner_token";
+
 /* ================= COOKIE OPTIONS ================= */
 const cookieOptions = {
   httpOnly: true,
@@ -51,7 +55,7 @@ async function registerUser(req, res) {
       { expiresIn: "7d" }
     );
 
-    res.cookie("token", token, cookieOptions);
+    res.cookie(USER_COOKIE, token, cookieOptions);
 
     safeLog({
       actorId: user._id,
@@ -108,7 +112,8 @@ console.log("EMAIL TYPE:", typeof req.body.email);
       { expiresIn: "7d" }
     );
 
-    res.cookie("token", token, cookieOptions);
+    res.cookie(USER_COOKIE, token, cookieOptions);
+
 
     safeLog({
       actorId: user._id,
@@ -139,7 +144,7 @@ function logoutUser(req, res) {
       req,
     });
   }
-  res.clearCookie("token", cookieOptions);
+  res.clearCookie(USER_COOKIE, cookieOptions);
   res.json({ message: "Logged out" });
 }
 
@@ -174,7 +179,7 @@ async function registerFoodPartner(req, res) {
       { expiresIn: "7d" }
     );
 
-    res.cookie("token", token, cookieOptions);
+    res.cookie(PARTNER_COOKIE, token, cookieOptions);
 
     safeLog({
       actorId: partner._id,
@@ -228,7 +233,7 @@ async function loginFoodPartner(req, res) {
       { expiresIn: "7d" }
     );
 
-    res.cookie("token", token, cookieOptions);
+    res.cookie(PARTNER_COOKIE, token, cookieOptions);
 
     safeLog({
       actorId: partner._id,
@@ -256,7 +261,7 @@ function logoutFoodPartner(req, res) {
       req,
     });
   }
-  res.clearCookie("token", cookieOptions);
+  res.clearCookie(PARTNER_COOKIE, cookieOptions);
   res.json({ message: "Logged out" });
 }
 

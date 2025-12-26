@@ -1,40 +1,45 @@
-const express = require('express');
-const path = require('path');
-const cookieParser = require('cookie-parser');
-const authRoutes = require('./routes/auth.routes');
-const foodRoutes = require('./routes/food.routes');
-const foodPartnerRoutes = require('./routes/food-partner.routes');
-const cors = require('cors');
+const express = require("express");
+const path = require("path");
+const cookieParser = require("cookie-parser");
+const cors = require("cors");
+
+const authRoutes = require("./routes/auth.routes");
+const foodRoutes = require("./routes/food.routes");
+const foodPartnerRoutes = require("./routes/food-partner.routes");
+const orderRoutes = require("./routes/order.routes");
+const orderIntentRoutes = require("./routes/orderIntent.routes");
 
 const app = express();
 
-// COOKIE PARSER BEFORE ROUTES
-app.use(cookieParser());
-// CORS FIRST
-app.use(cors({
-    origin: 'http://localhost:5173',
+/* ================== MIDDLEWARE ORDER MATTERS ================== */
+
+// 1️⃣ CORS MUST COME FIRST
+app.use(
+  cors({
+    origin: "http://localhost:5173",
     credentials: true
-}));
+  })
+);
 
+// 2️⃣ COOKIE PARSER AFTER CORS
+app.use(cookieParser());
 
-
-// JSON PARSER
+// 3️⃣ BODY PARSER
 app.use(express.json());
 
-// STATIC FILES
-app.use('/vdeos', express.static(path.join(__dirname, '../../vdeos')));
+// 4️⃣ STATIC (optional)
+app.use("/videos", express.static(path.join(__dirname, "../../videos")));
+
+/* ================== ROUTES ================== */
 
 app.get("/", (req, res) => {
-    res.send("Hello world");
+  res.send("Server running");
 });
 
-// ROUTES
-app.use('/api/auth', authRoutes);
-app.use('/api/food', foodRoutes);
-app.use('/api/food-partner', foodPartnerRoutes);
-app.use("/api/order-intent", require("./routes/orderIntent.routes"));
-app.use("/api/order", require("./routes/order.routes"))
-
-
+app.use("/api/auth", authRoutes);
+app.use("/api/food", foodRoutes);
+app.use("/api/food-partner", foodPartnerRoutes);
+app.use("/api/order", orderRoutes);
+app.use("/api/order-intent", orderIntentRoutes);
 
 module.exports = app;

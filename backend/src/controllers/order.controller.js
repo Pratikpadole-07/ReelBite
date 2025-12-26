@@ -56,75 +56,79 @@ exports.getPartnerOrders = async (req, res) => {
   }
 };
 
-/* ================= UPDATE ORDER STATUS (IDEMPOTENT) ================= */
+
+/* ================= UPDATE ORDER STATUS (SAFE + IDEMPOTENT) ================= */
+/* ================= UPDATE ORDER STATUS (SAFE) ================= */
 exports.updateOrderStatus = async (req, res) => {
-  const { orderId, status: nextStatus } = req.body;
+  try {
+    const { orderId, status: nextStatus } = req.body;
 
-  if (!orderId || !nextStatus) {
-    return res.status(400).json({ message: "orderId and status required" });
-  }
+    if (!orderId || !nextStatus) {
+      return res.status(400).json({ message: "orderId and status required" });
+    }
 
-  const validTransitions = {
-    pending: ["accepted", "rejected"],
-    accepted: ["preparing"],
-    preparing: ["completed"]
-  };
+    const validTransitions = {
+      pending: ["accepted"],
+      accepted: ["preparing"],
+      preparing: ["completed"]
+    };
 
-  // 1️⃣ Read current state
-  const order = await Order.findById(orderId);
-  if (!order) {
-    return res.status(404).json({ message: "Order not found" });
-  }
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
 
-  const currentStatus = order.status;
-  const allowed = validTransitions[currentStatus] || [];
+    const currentStatus = order.status;
+    if (!validTransitions[currentStatus]?.includes(nextStatus)) {
+      return res.status(400).json({ message: "Invalid status transition" });
+    }
 
-  if (!allowed.includes(nextStatus)) {
-    return res.status(400).json({ message: "Invalid status transition" });
-  }
-
-  // 2️⃣ Atomic + idempotent update
-  const updatedOrder = await Order.findOneAndUpdate(
-    {
-      _id: orderId,
-      status: currentStatus,
-      "statusHistory.status": { $ne: nextStatus }
-    },
-    {
-      $set: { status: nextStatus },
-      $push: {
-        statusHistory: {
-          status: nextStatus,
-          at: new Date()
+    const updatedOrder = await Order.findOneAndUpdate(
+      {
+        _id: orderId,
+        status: currentStatus,
+        "statusHistory.status": { $ne: nextStatus }
+      },
+      {
+        $set: { status: nextStatus },
+        $push: {
+          statusHistory: { status: nextStatus, at: new Date() }
         }
-      }
-    },
-    { new: true }
-  );
+      },
+      { new: true }
+    );
 
-  // 3️⃣ No-op (duplicate request / retry)
-  if (!updatedOrder) {
-    const fresh = await Order.findById(orderId);
-    return res.json({ message: "No state change", order: fresh });
+    if (!updatedOrder) {
+      return res.json({ message: "No state change" });
+    }
+
+    // 🔥 SEND RESPONSE FIRST
+    res.json(updatedOrder);
+
+    // 🔥 SOCKET SHOULD NEVER BREAK API
+    try {
+      const io = getIO();
+      const last = updatedOrder.statusHistory.at(-1);
+
+      io.to(`user:${updatedOrder.user}`).emit("order-status-updated", {
+        orderId: updatedOrder._id,
+        status: nextStatus,
+        at: last.at
+      });
+
+      io.to(`partner:${updatedOrder.partner}`).emit("order-status-updated", {
+        orderId: updatedOrder._id,
+        status: nextStatus,
+        at: last.at
+      });
+    } catch (socketErr) {
+      console.error("Socket emit failed:", socketErr.message);
+    }
+
+  } catch (err) {
+    console.error("Update order status error:", err);
+    res.status(500).json({ message: "Internal error" });
   }
-
-  // 4️⃣ Emit realtime update
-  const io = getIO();
-  const lastEntry = updatedOrder.statusHistory.at(-1);
-
-  io.to(`user:${updatedOrder.user}`).emit("order-status-updated", {
-    orderId: updatedOrder._id,
-    status: nextStatus,
-    at: lastEntry.at
-  });
-
-  io.to(`partner:${updatedOrder.partner}`).emit("order-status-updated", {
-    orderId: updatedOrder._id,
-    status: nextStatus,
-    at: lastEntry.at
-  });
-
-  res.json(updatedOrder);
 };
 
 /* ================= DASHBOARD STATS ================= */
