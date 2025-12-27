@@ -2,6 +2,7 @@ const Order = require("../models/order.model");
 const Food = require("../models/food.model");
 const mongoose = require("mongoose");
 const { getIO } = require("../socket");
+const { generateOrderExplanation } = require("../services/ai.service");
 
 /* ================= CREATE ORDER ================= */
 exports.createOrder = async (req, res) => {
@@ -187,5 +188,37 @@ exports.getPartnerOrderAnalytics = async (req, res) => {
   } catch (err) {
     console.error("PARTNER ANALYTICS ERROR:", err);
     res.status(500).json({ message: "Analytics failed" });
+  }
+};
+
+
+exports.explainOrderStatus = async (req, res) => {
+  try {
+    const { id: orderId } = req.params;
+
+    const order = await Order.findById(orderId)
+      .populate("food", "name")
+      .populate("user", "_id");
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // 🔒 strict user-only access
+    if (String(order.user._id) !== String(req.user._id)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    // ✅ deterministic explanation (NO AI CALL)
+    const explanation =
+      generateOrderExplanation(order) ||
+      "Explanation unavailable at the moment.";
+
+    return res.json({ explanation });
+  } catch (err) {
+    console.error("Explain order error:", err.message);
+    return res
+      .status(500)
+      .json({ message: "Failed to generate explanation" });
   }
 };
