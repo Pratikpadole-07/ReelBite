@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-
+const { explainOrderStatus } = require("../controllers/order.controller");
 /* CONTROLLERS */
 const {
   createOrder,
@@ -33,6 +33,13 @@ router.get(
   "/partner/analytics",
   authFoodPartnerMiddleware,
   getPartnerOrderAnalytics
+);
+
+
+router.get(
+  "/:id/explanation",
+  authUserMiddleware,
+  explainOrderStatus
 );
 
 

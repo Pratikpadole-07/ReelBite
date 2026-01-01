@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import "../../styles/auth-shared.css";
+import "../../styles/user-register.css";
 
 const API_URL = "http://localhost:3000/api";
 
@@ -17,7 +17,6 @@ const UserRegister = () => {
     const password = e.target.password.value;
 
     try {
-      // 1️⃣ Register user (backend sets cookie)
       await axios.post(
         `${API_URL}/auth/user/register`,
         {
@@ -28,12 +27,10 @@ const UserRegister = () => {
         { withCredentials: true }
       );
 
-      // 2️⃣ Warm up auth (ensures cookie is available)
       await axios.get(`${API_URL}/auth/user/me`, {
         withCredentials: true,
       });
 
-      // 3️⃣ Navigate to home
       navigate("/");
     } catch (err) {
       console.error("Registration error:", err);
@@ -42,51 +39,62 @@ const UserRegister = () => {
   };
 
   return (
-    <div className="auth-page-wrapper">
-      <div className="auth-card" role="region">
-        <header>
-          <h1 className="auth-title">Create your account</h1>
-          <p className="auth-subtitle">
-            Join to explore and enjoy delicious meals.
-          </p>
+    <div className="user-register-page">
+      <div className="user-register-card" role="region">
+        <header className="user-register-header">
+          <h1>Create your account</h1>
+          <p>Join to discover food reels and order instantly</p>
         </header>
 
-        <nav className="auth-alt-action">
-          <strong>Switch:</strong>{" "}
-          <Link to="/user/register">User</Link> •{" "}
-          <Link to="/food-partner/register">Food partner</Link>
+        <nav className="user-register-switch">
+          <span>Switch:</span>
+          <Link to="/user/register" className="active">
+            User
+          </Link>
+          <span>•</span>
+          <Link to="/food-partner/register">Food Partner</Link>
         </nav>
 
-        <form className="auth-form" onSubmit={handleSubmit}>
-          <div className="two-col">
-            <div className="field-group">
-              <label>First Name</label>
-              <input name="firstName" required />
+        <form className="user-register-form" onSubmit={handleSubmit}>
+          <section className="form-section">
+            <h3>Personal Details</h3>
+
+            <div className="two-col">
+              <div className="form-group">
+                <label>First Name</label>
+                <input name="firstName" required />
+              </div>
+
+              <div className="form-group">
+                <label>Last Name</label>
+                <input name="lastName" required />
+              </div>
             </div>
-            <div className="field-group">
-              <label>Last Name</label>
-              <input name="lastName" required />
+          </section>
+
+          <section className="form-section">
+            <h3>Account Credentials</h3>
+
+            <div className="form-group">
+              <label>Email</label>
+              <input type="email" name="email" required />
             </div>
-          </div>
 
-          <div className="field-group">
-            <label>Email</label>
-            <input type="email" name="email" required />
-          </div>
+            <div className="form-group">
+              <label>Password</label>
+              <input type="password" name="password" required />
+            </div>
+          </section>
 
-          <div className="field-group">
-            <label>Password</label>
-            <input type="password" name="password" required />
-          </div>
-
-          <button className="auth-submit" type="submit">
+          <button className="user-register-btn" type="submit">
             Sign Up
           </button>
         </form>
 
-        <div className="auth-alt-action">
-          Already have an account? <Link to="/user/login">Sign in</Link>
-        </div>
+        <footer className="user-register-footer">
+          <span>Already have an account?</span>
+          <Link to="/user/login">Sign in</Link>
+        </footer>
       </div>
     </div>
   );

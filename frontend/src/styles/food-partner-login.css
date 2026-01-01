@@ -1,0 +1,99 @@
+.partner-login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-background);
+  padding: 16px;
+}
+
+.partner-login-card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.partner-login-header h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 600;
+}
+
+.partner-login-header p {
+  margin-top: 6px;
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+}
+
+.partner-login-error {
+  background: rgba(255, 0, 0, 0.08);
+  color: #c62828;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.partner-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.form-group input {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+  font-size: 0.95rem;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.partner-login-btn {
+  margin-top: 6px;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.partner-login-btn:hover {
+  opacity: 0.95;
+}
+
+.partner-login-footer {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.partner-login-footer a {
+  margin-left: 6px;
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 500;
+}

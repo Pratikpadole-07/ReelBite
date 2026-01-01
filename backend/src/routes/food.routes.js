@@ -2,13 +2,14 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const upload = multer({ storage: multer.memoryStorage() });
-
+const authOptionalMiddleware = require("../middlewares/authOptional.middleware");
 const {authUserMiddleware,authFoodPartnerMiddleware }= require("../middlewares/auth.middleware");
 const { commentLimiter } = require("../middlewares/rateLimit.middleware");
 
 const {
   createFood,
   getFoodItems,
+  getReels,
   getFoodPartnerDetails,
   likeFood,
   saveFood,
@@ -25,6 +26,7 @@ const {
 
 // FEED
 router.get("/", getFoodItems);
+router.get("/reels", authOptionalMiddleware, getReels);
 
 // FOOD PARTNER PUBLIC PAGE
 router.get("/partner/:id", getFoodPartnerDetails);

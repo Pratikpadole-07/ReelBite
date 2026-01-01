@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import api from "../../assets/api/api";
-import socket from "../../socket"; // 🔴 REQUIRED
+import socket from "../../socket";
+import OrderStatusExplanationModal from "../../components/OrderStatusExplanationModal";
 import "../../styles/orders.css";
 
 const STATUS_FLOW = ["pending", "accepted", "preparing", "completed"];
@@ -20,6 +21,11 @@ const formatTime = (date) =>
 
 const UserOrders = () => {
   const [orders, setOrders] = useState([]);
+
+  // 🔥 AI explanation state
+  const [explainOpen, setExplainOpen] = useState(false);
+  const [explainLoading, setExplainLoading] = useState(false);
+  const [explainText, setExplainText] = useState("");
 
   /* ---------------- FETCH ORDERS ---------------- */
   const fetchOrders = async () => {
@@ -55,10 +61,24 @@ const UserOrders = () => {
       );
     });
 
-    return () => {
-      socket.off("order-status-updated");
-    };
+    return () => socket.off("order-status-updated");
   }, []);
+
+  /* ---------------- AI EXPLAIN ---------------- */
+  const explainStatus = async (orderId) => {
+    setExplainOpen(true);
+    setExplainLoading(true);
+    setExplainText("");
+
+    try {
+      const res = await api.get(`/order/${orderId}/explanation`);
+      setExplainText(res.data.explanation);
+    } catch {
+      setExplainText("Explanation unavailable at the moment.");
+    } finally {
+      setExplainLoading(false);
+    }
+  };
 
   /* ---------------- UI ---------------- */
   return (
@@ -112,12 +132,28 @@ const UserOrders = () => {
                       );
                     })}
                   </div>
+
+                  {/* 🔥 AI BUTTON */}
+                  <button
+                    className="secondary"
+                    onClick={() => explainStatus(order._id)}
+                  >
+                    Explain status
+                  </button>
                 </div>
               </div>
             );
           })}
         </div>
       )}
+
+      {/* 🔥 AI MODAL */}
+      <OrderStatusExplanationModal
+        open={explainOpen}
+        loading={explainLoading}
+        text={explainText}
+        onClose={() => setExplainOpen(false)}
+      />
     </div>
   );
 };

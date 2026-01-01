@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from "react";
-import "../../styles/auth-shared.css";
+import "../../styles/user-login.css";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import socket from "../../socket";
@@ -22,13 +22,12 @@ const UserLogin = () => {
     } catch (err) {
       const status = err.response?.status;
 
-      if (status === 429) setError("Too many attempts. Try later.");
-      else if (status === 400) setError("Invalid email or password ❌");
-      else setError("Login failed. Try again.");
+      if (status === 429) setError("Too many attempts. Try again later.");
+      else if (status === 400) setError("Invalid email or password.");
+      else setError("Login failed. Please try again.");
     }
   };
 
-  // ✅ join socket AFTER user is available
   useEffect(() => {
     if (user?._id) {
       socket.emit("join-user", user._id);
@@ -36,20 +35,29 @@ const UserLogin = () => {
   }, [user]);
 
   return (
-    <div className="auth-page-wrapper">
-      <div className="auth-card">
-        <h1 className="auth-title">Welcome back</h1>
+    <div className="login-page">
+      <div className="login-card">
+        <header className="login-header">
+          <h1>Welcome back</h1>
+          <p>Sign in to continue ordering</p>
+        </header>
 
-        {error && <p className="error-text">{error}</p>}
+        {error && <div className="login-error">{error}</div>}
 
-        <form className="auth-form" onSubmit={handleSubmit}>
-          <label>Email</label>
-          <input name="email" type="email" required />
+        <form className="login-form" onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label htmlFor="email">Email</label>
+            <input id="email" name="email" type="email" required />
+          </div>
 
-          <label>Password</label>
-          <input name="password" type="password" required />
+          <div className="form-group">
+            <label htmlFor="password">Password</label>
+            <input id="password" name="password" type="password" required />
+          </div>
 
-          <button className="auth-submit">Sign In</button>
+          <button className="login-btn" type="submit">
+            Sign In
+          </button>
         </form>
       </div>
     </div>

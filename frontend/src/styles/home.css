@@ -1,0 +1,91 @@
+/* ============================= */
+/* HOME PAGE LAYOUT */
+/* ============================= */
+
+.home-page {
+  font-family: Arial, sans-serif;
+  color: var(--color-text);
+  background: var(--color-background);
+}
+
+/* ============================= */
+/* HOME HEADER */
+/* ============================= */
+
+.home-header {
+  padding: 16px;
+}
+
+.home-header h1 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.home-header p {
+  margin-top: 4px;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+/* ============================= */
+/* FILTERS */
+/* ============================= */
+
+.reel-filters {
+  position: sticky;
+  top: 60px;
+  z-index: 50;
+  background: var(--color-surface);
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.search-input,
+.category-select {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+}
+
+/* ============================= */
+/* FEED TABS */
+/* ============================= */
+
+.feed-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 16px;
+}
+
+.feed-tabs button {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+
+.feed-tabs button.active {
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 500;
+}
+
+/* ============================= */
+/* LOADING */
+/* ============================= */
+
+.loading-text {
+  text-align: center;
+  padding: 20px;
+  color: var(--color-text-muted);
+}

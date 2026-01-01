@@ -1,35 +1,32 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import "../../styles/auth-shared.css";
+import "../../styles/choose-login.css";
 
 const ChooseLogin = () => {
   return (
-    <div className="auth-page-wrapper">
-      <div className="auth-card">
-        <h1 className="auth-title">Sign In</h1>
-        <p className="auth-subtitle">Choose how you want to log in.</p>
+    <div className="choose-page">
+      <div className="choose-card" role="region" aria-labelledby="choose-login-title">
+        <header className="choose-header">
+          <h1 id="choose-login-title">Sign In</h1>
+          <p>Select how you want to access your account</p>
+        </header>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <Link to="/user/login" className="auth-submit">
-            Sign in as User
+        <div className="role-options">
+          <Link to="/user/login" className="role-card primary">
+            <h2>User</h2>
+            <p>Order food and explore reels</p>
           </Link>
 
-          <Link
-            to="/food-partner/login"
-            className="auth-submit"
-            style={{
-              background: "var(--color-surface-alt)",
-              color: "var(--color-text)",
-              border: "1px solid var(--color-border)",
-            }}
-          >
-            Sign in as Food Partner
+          <Link to="/food-partner/login" className="role-card secondary">
+            <h2>Food Partner</h2>
+            <p>Manage uploads and incoming orders</p>
           </Link>
         </div>
 
-        <div className="auth-alt-action">
-          Don’t have an account? <Link to="/register">Register</Link>
-        </div>
+        <footer className="choose-footer">
+          <span>New here?</span>
+          <Link to="/register">Create an account</Link>
+        </footer>
       </div>
     </div>
   );

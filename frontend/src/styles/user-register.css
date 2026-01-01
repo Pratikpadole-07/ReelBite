@@ -1,0 +1,122 @@
+.user-register-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  background: var(--color-background);
+  padding: 20px;
+}
+
+.user-register-card {
+  width: 100%;
+  max-width: 460px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.user-register-header h1 {
+  margin: 0;
+  font-size: 1.7rem;
+  font-weight: 600;
+}
+
+.user-register-header p {
+  margin-top: 6px;
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+}
+
+.user-register-switch {
+  font-size: 0.9rem;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.user-register-switch a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.user-register-switch .active {
+  font-weight: 600;
+}
+
+.user-register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.form-section h3 {
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.form-group input {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.user-register-btn {
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.user-register-btn:hover {
+  opacity: 0.95;
+}
+
+.user-register-footer {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.user-register-footer a {
+  margin-left: 6px;
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 500;
+}

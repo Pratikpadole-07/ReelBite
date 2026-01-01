@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from "react";
-import "../../styles/auth-shared.css";
+import "../../styles/food-partner-login.css";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import socket from "../../socket";
@@ -22,13 +22,12 @@ const FoodPartnerLogin = () => {
     } catch (err) {
       const status = err.response?.status;
 
-      if (status === 429) setError("Too many attempts. Try later.");
-      else if (status === 400) setError("Invalid email or password ❌");
-      else setError("Something went wrong. Try again.");
+      if (status === 429) setError("Too many attempts. Try again later.");
+      else if (status === 400) setError("Invalid email or password.");
+      else setError("Login failed. Please try again.");
     }
   };
 
-  // ✅ join partner socket room
   useEffect(() => {
     if (foodPartner?._id) {
       socket.emit("join-partner", foodPartner._id);
@@ -36,25 +35,45 @@ const FoodPartnerLogin = () => {
   }, [foodPartner]);
 
   return (
-    <div className="auth-page-wrapper">
-      <div className="auth-card">
-        <h2 className="auth-title">Partner Login</h2>
+    <div className="partner-login-page">
+      <div className="partner-login-card">
+        <header className="partner-login-header">
+          <h1>Partner Login</h1>
+          <p>Access your dashboard and manage orders</p>
+        </header>
 
-        {error && <p className="error-text">{error}</p>}
+        {error && <div className="partner-login-error">{error}</div>}
 
-        <form className="auth-form" onSubmit={handleSubmit}>
-          <label>Email</label>
-          <input name="email" type="email" required />
+        <form className="partner-login-form" onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label htmlFor="partner-email">Email</label>
+            <input
+              id="partner-email"
+              name="email"
+              type="email"
+              required
+            />
+          </div>
 
-          <label>Password</label>
-          <input name="password" type="password" required />
+          <div className="form-group">
+            <label htmlFor="partner-password">Password</label>
+            <input
+              id="partner-password"
+              name="password"
+              type="password"
+              required
+            />
+          </div>
 
-          <button className="auth-submit">Sign In</button>
+          <button className="partner-login-btn" type="submit">
+            Sign In
+          </button>
         </form>
 
-        <p className="auth-alt-action">
-          New partner? <a href="/food-partner/register">Create account</a>
-        </p>
+        <footer className="partner-login-footer">
+          <span>New partner?</span>
+          <a href="/food-partner/register">Create account</a>
+        </footer>
       </div>
     </div>
   );

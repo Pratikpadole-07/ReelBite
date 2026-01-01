@@ -1,24 +1,37 @@
-import React, { useEffect, useRef, useState, useContext } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useContext,
+  useCallback
+} from "react";
 import { Link } from "react-router-dom";
 import api from "../assets/api/api";
 import CommentModal from "./CommentModal";
 import { AuthContext } from "../context/AuthContext";
 
 const ReelFeed = ({
-  items = [],
+  search = "",
+  category = "All",
+  onlyFollowed = false,
   onLike = () => {},
   onSave = () => {},
-  emptyMessage = "No reels.",
-  isLoading = false
+  emptyMessage = "No reels."
 }) => {
   const { user } = useContext(AuthContext);
+
+  /* ================= STATE ================= */
+  const [items, setItems] = useState([]);
+  const [cursor, setCursor] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const [activeCommentFoodId, setActiveCommentFoodId] = useState(null);
   const [placingOrderId, setPlacingOrderId] = useState(null);
 
+  /* ================= VIDEO AUTOPLAY ================= */
   const videoRefs = useRef(new Map());
 
-  /* ---------------- VIDEO AUTOPLAY ---------------- */
   useEffect(() => {
     const observer = new IntersectionObserver(
       entries => {
@@ -35,52 +48,113 @@ const ReelFeed = ({
     );
 
     videoRefs.current.forEach(video => observer.observe(video));
-
-    return () => {
-      videoRefs.current.forEach(video => observer.unobserve(video));
-      observer.disconnect();
-    };
+    return () => observer.disconnect();
   }, [items]);
 
   const registerVideoRef = id => el => {
-    if (!el) {
-      videoRefs.current.delete(id);
-    } else {
-      videoRefs.current.set(id, el);
-    }
+    if (!el) videoRefs.current.delete(id);
+    else videoRefs.current.set(id, el);
   };
 
-  /* ---------------- PLACE ORDER ---------------- */
+  /* ================= RESET ON FILTER CHANGE ================= */
+/* ================= RESET + FETCH ================= */
+useEffect(() => {
+  setItems([]);
+  setCursor(null);
+  setHasMore(true);
+
+  // force fresh fetch after reset
+  fetchReels(true);
+}, [search, category, onlyFollowed]);
+
+/* ================= FETCH REELS ================= */
+const fetchReels = async (isFresh = false) => {
+  if (loading || (!hasMore && !isFresh)) return;
+
+  setLoading(true);
+  try {
+    const res = await api.get("/food/reels", {
+      params: {
+        cursor: isFresh ? null : cursor,
+        limit: 5,
+        search,
+        category,
+        onlyFollowed
+      }
+    });
+
+    const newReels = res.data.reels || [];
+
+    setItems(prev =>
+      isFresh ? newReels : [...prev, ...newReels]
+    );
+
+    setCursor(res.data.nextCursor || null);
+    setHasMore(Boolean(res.data.nextCursor));
+  } catch (err) {
+    console.error("Failed to load reels", err);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+  /* ================= FETCH WHEN FILTERS CHANGE ================= */
+  useEffect(() => {
+    fetchReels();
+  }, [search, category, onlyFollowed]);
+
+  /* ================= INFINITE SCROLL ================= */
+  const observerRef = useRef(null);
+
+  const lastReelRef = useCallback(
+    node => {
+      if (loading || !hasMore) return;
+
+      if (observerRef.current) observerRef.current.disconnect();
+
+      observerRef.current = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting) {
+          fetchReels();
+        }
+      });
+
+      if (node) observerRef.current.observe(node);
+    },
+    [loading, hasMore]
+  );
+
+  /* ================= PLACE ORDER ================= */
   const placeOrder = async foodId => {
     try {
       setPlacingOrderId(foodId);
       await api.post("/order", { foodId });
-      alert("Order placed successfully");
-    } catch (err) {
-      console.error(err.response?.data || err);
-      alert(err.response?.data?.message || "Failed to place order");
+      alert("Order placed");
+    } catch {
+      alert("Failed to place order");
     } finally {
       setPlacingOrderId(null);
     }
   };
 
-  /* ---------------- STATES ---------------- */
-  if (isLoading) {
-    return <div className="reel-page">Loading reels...</div>;
-  }
-
-  if (!items.length) {
+  /* ================= EMPTY ================= */
+  if (!items.length && !loading) {
     return <div className="reel-page">{emptyMessage}</div>;
   }
 
-  /* ---------------- RENDER ---------------- */
+  /* ================= RENDER ================= */
   return (
     <div className="reel-page">
-      {items.map(item => {
+      {items.map((item, index) => {
+        const isLast = index === items.length - 1;
         const partner = item.foodPartner;
 
         return (
-          <div key={item._id} className="reel-row">
+          <div
+            key={item._id}
+            ref={isLast ? lastReelRef : null}
+            className="reel-row"
+          >
             <div className="reel-box">
               <video
                 ref={registerVideoRef(item._id)}
@@ -100,16 +174,17 @@ const ReelFeed = ({
                 <button onClick={() => onSave(item)}>🔖</button>
                 <span>{item.savesCount || 0}</span>
 
-                <button onClick={() => setActiveCommentFoodId(item._id)}>💬</button>
+                <button onClick={() => setActiveCommentFoodId(item._id)}>
+                  💬
+                </button>
                 <span>{item.commentsCount || 0}</span>
               </div>
 
               <div className="food-info">
                 <h3>{item.name}</h3>
                 {item.description && <p>{item.description}</p>}
-                {item.price && <p>₹ {item.price}</p>}
+                {item.price && <p>Rs {item.price}</p>}
 
-                {/* PUBLIC RESTAURANT PAGE */}
                 {partner?._id && (
                   <Link
                     to={`/restaurant/${partner._id}`}
@@ -124,14 +199,15 @@ const ReelFeed = ({
                   </Link>
                 )}
 
-                {/* USER ONLY */}
                 {user && (
                   <button
                     className="order-btn"
                     disabled={placingOrderId === item._id}
                     onClick={() => placeOrder(item._id)}
                   >
-                    {placingOrderId === item._id ? "Placing..." : "Order Now"}
+                    {placingOrderId === item._id
+                      ? "Placing..."
+                      : "Order Now"}
                   </button>
                 )}
               </div>
@@ -139,6 +215,8 @@ const ReelFeed = ({
           </div>
         );
       })}
+
+      {loading && <p className="loading-text">Loading more…</p>}
 
       <CommentModal
         foodId={activeCommentFoodId}

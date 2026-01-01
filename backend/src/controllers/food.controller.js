@@ -26,56 +26,119 @@ async function createFood(req, res) {
       video: upload.url,
       likeCount: 0,
       savesCount: 0,
-      commentsCount: 0,
+      commentsCount: 0
     });
 
-    res.status(201).json({ success: true, food });
+    return res.status(201).json({ success: true, food });
   } catch (err) {
     console.error("Create food error:", err);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 }
 
-/* ====================== FETCH FOOD FEED ====================== */
+/* ====================== PAGINATED FEED (NON-REELS) ====================== */
 async function getFoodItems(req, res) {
   try {
-    const { search = "", category = "All", onlyFollowed = "false" } = req.query;
+    const {
+      search = "",
+      category = "All",
+      onlyFollowed = "false",
+      page = 1,
+      limit = 5
+    } = req.query;
+
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+    const skip = (pageNum - 1) * limitNum;
 
     const query = {};
 
-    // Search
     if (search.trim()) {
       query.name = { $regex: search.trim(), $options: "i" };
     }
 
-    // Category
     if (category !== "All") {
       query.category = category;
     }
 
-    // Follow filter only if user exists
     if (onlyFollowed === "true") {
-      if (!req.user || !Array.isArray(req.user.following)) {
-        return res.json({ foodItems: [] });
+      if (!req.user || !req.user.following?.length) {
+        return res.json({ foodItems: [], hasMore: false });
       }
       query.foodPartner = { $in: req.user.following };
     }
 
     const foods = await Food.find(query)
-      .populate("foodPartner", "name phone orderLinks")
-      .sort({ createdAt: -1 });
+      .populate("foodPartner", "name logo")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum + 1);
 
-    res.json({ foodItems: foods });
+    const hasMore = foods.length > limitNum;
+    if (hasMore) foods.pop();
+
+    return res.json({ foodItems: foods, hasMore });
   } catch (err) {
-  console.error("❌ getFoodItems FULL ERROR:", err);
-  return res.status(500).json({
-    message: err.message,
-    stack: err.stack
-  });
+    console.error("Feed error:", err);
+    return res.status(500).json({ message: "Feed failed" });
+  }
 }
 
-}
+/* ====================== REELS (CURSOR BASED ONLY) ====================== */
+async function getReels(req, res) {
+  try {
+    const {
+      cursor,
+      limit = 5,
+      search = "",
+      category = "All",
+      onlyFollowed = "false"
+    } = req.query;
 
+    const limitNum = Number(limit);
+    const query = {};
+
+    // SEARCH
+    if (search.trim()) {
+      query.name = { $regex: search.trim(), $options: "i" };
+    }
+
+    // CATEGORY
+    if (category !== "All") {
+      query.category = category;
+    }
+
+    // FOLLOWING
+    if (onlyFollowed === "true") {
+      if (!req.user || !req.user.following?.length) {
+        return res.json({ reels: [], nextCursor: null });
+      }
+      query.foodPartner = { $in: req.user.following };
+    }
+
+    // CURSOR
+    if (cursor) {
+      query._id = { $lt: cursor };
+    }
+
+    const reels = await Food.find(query)
+      .sort({ _id: -1 }) // REQUIRED for cursor pagination
+      .limit(limitNum + 1)
+      .populate("foodPartner", "name logo");
+
+    let nextCursor = null;
+
+    if (reels.length > limitNum) {
+      const last = reels.pop();
+      nextCursor = last._id;
+    }
+
+    return res.json({ reels, nextCursor });
+  } catch (err) {
+    console.error("Get reels error:", err);
+    return res.status(500).json({ message: "Failed to fetch reels" });
+  }
+}
 
 /* ====================== FOOD PARTNER PUBLIC PAGE ====================== */
 async function getFoodPartnerDetails(req, res) {
@@ -89,17 +152,15 @@ async function getFoodPartnerDetails(req, res) {
       .populate("foodPartner", "name phone orderLinks")
       .sort({ createdAt: -1 });
 
-    res.json({ success: true, partner, foods });
+    return res.json({ success: true, partner, foods });
   } catch (err) {
     console.error("Partner page error:", err);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 }
 
-/* ====================== LIKE FOOD ====================== */
+/* ====================== LIKE ====================== */
 async function likeFood(req, res) {
-  if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-
   const { foodId } = req.body;
 
   const exists = await Like.findOne({ user: req.user._id, food: foodId });
@@ -113,20 +174,14 @@ async function likeFood(req, res) {
   await Like.create({ user: req.user._id, food: foodId });
   await Food.findByIdAndUpdate(foodId, { $inc: { likeCount: 1 } });
 
-  res.json({ liked: true });
+  return res.json({ liked: true });
 }
 
-/* ====================== SAVE FOOD ====================== */
-/* ====================== SAVE / UNSAVE FOOD ====================== */
+/* ====================== SAVE ====================== */
 async function saveFood(req, res) {
-  if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-
   const { foodId } = req.body;
 
-  const exists = await Save.findOne({
-    user: req.user._id,
-    food: foodId
-  });
+  const exists = await Save.findOne({ user: req.user._id, food: foodId });
 
   if (exists) {
     await Save.deleteOne({ _id: exists._id });
@@ -134,184 +189,135 @@ async function saveFood(req, res) {
     return res.json({ saved: false });
   }
 
-  await Save.create({
-    user: req.user._id,
-    food: foodId
-  });
-
+  await Save.create({ user: req.user._id, food: foodId });
   await Food.findByIdAndUpdate(foodId, { $inc: { savesCount: 1 } });
 
-  res.json({ saved: true });
+  return res.json({ saved: true });
 }
 
-/* ====================== GET SAVED FOODS ====================== */
+/* ====================== SAVED FOODS ====================== */
 async function getSavedFoods(req, res) {
-  if (!req.user) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-
   const saved = await Save.find({ user: req.user._id })
-    .populate({
-      path: "food",
-      populate: { path: "foodPartner" }
-    })
+    .populate({ path: "food", populate: { path: "foodPartner" } })
     .sort({ createdAt: -1 });
 
-  const foods = saved.map(s => s.food);
-
-  res.json({ foods });
+  return res.json({ foods: saved.map(s => s.food) });
 }
-
 
 /* ====================== COMMENTS ====================== */
 async function addComment(req, res) {
-  if (!req.user) return res.status(401).json({ message: "Unauthorized" });
+  const { foodId, text } = req.body;
 
-  try {
-    const { foodId, text } = req.body;
+  const comment = await Comment.create({
+    food: foodId,
+    user: req.user._id,
+    text
+  });
 
-    const comment = await Comment.create({
-      food: foodId,
-      user: req.user._id,
-      text,
-    });
+  await Food.findByIdAndUpdate(foodId, {
+    $inc: { commentsCount: 1 }
+  });
 
-    await Food.findByIdAndUpdate(foodId, {
-      $inc: { commentsCount: 1 },
-    });
-
-    res.status(201).json({ success: true, comment });
-  } catch (err) {
-    console.error("Add comment error:", err);
-    res.status(500).json({ success: false });
-  }
+  return res.status(201).json({ success: true, comment });
 }
 
 async function getComments(req, res) {
-  try {
-    const comments = await Comment.find({ food: req.params.foodId })
-      .populate("user", "fullName email")
-      .sort({ createdAt: -1 });
+  const comments = await Comment.find({ food: req.params.foodId })
+    .populate("user", "fullName email")
+    .sort({ createdAt: -1 });
 
-    res.json({ success: true, comments });
-  } catch (err) {
-    console.error("Get comments error:", err);
-    res.status(500).json({ success: false });
-  }
+  return res.json({ success: true, comments });
 }
 
-/* ====================== FOLLOW / UNFOLLOW ====================== */
+/* ====================== FOLLOW ====================== */
 async function followPartner(req, res) {
-  if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-
   const { partnerId } = req.body;
 
   await User.findByIdAndUpdate(req.user._id, {
-    $addToSet: { following: partnerId },
+    $addToSet: { following: partnerId }
   });
 
   await FoodPartner.findByIdAndUpdate(partnerId, {
-    $addToSet: { followers: req.user._id },
+    $addToSet: { followers: req.user._id }
   });
 
-  res.json({ success: true });
+  return res.json({ success: true });
 }
 
 async function unfollowPartner(req, res) {
-  if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-
   const { partnerId } = req.body;
 
   await User.findByIdAndUpdate(req.user._id, {
-    $pull: { following: partnerId },
+    $pull: { following: partnerId }
   });
 
   await FoodPartner.findByIdAndUpdate(partnerId, {
-    $pull: { followers: req.user._id },
+    $pull: { followers: req.user._id }
   });
 
-  res.json({ success: true });
+  return res.json({ success: true });
 }
 
+/* ====================== PARTNER ANALYTICS ====================== */
 async function getMyUploads(req, res) {
-  const foods = await Food.find({
-    foodPartner: req.user._id
-  }).sort({ createdAt: -1 });
+  const foods = await Food.find({ foodPartner: req.user._id }).sort({
+    createdAt: -1
+  });
 
-  res.json({ foods });
+  return res.json({ foods });
 }
 
 async function getOrderAnalytics(req, res) {
-  try {
-    const partnerId = req.user._id;
+  const orders = await Order.find({
+    foodPartner: req.user._id,
+    status: "completed"
+  });
 
-    const orders = await Order.find({
-      foodPartner: partnerId,
-      status: "completed"
-    });
+  const totalOrders = orders.length;
+  const totalRevenue = orders.reduce(
+    (sum, o) => sum + o.totalAmount,
+    0
+  );
 
-    let totalOrders = orders.length;
-    let totalRevenue = 0;
-
-    for (const order of orders) {
-      totalRevenue += order.totalAmount;
-    }
-
-    res.json({
-      totalOrders,
-      totalRevenue
-    });
-
-  } catch (err) {
-    console.error("Order analytics error:", err);
-    res.status(500).json({ message: "Failed to fetch analytics" });
-  }
+  return res.json({ totalOrders, totalRevenue });
 }
+
 async function getOrderTrends(req, res) {
-  try {
-    const partnerId = req.user._id;
-
-    const trends = await Order.aggregate([
-      {
-        $match: {
-          foodPartner: partnerId,
-          status: "completed"
-        }
-      },
-      {
-        $group: {
-          _id: {
-            year: { $year: "$createdAt" },
-            month: { $month: "$createdAt" },
-            day: { $dayOfMonth: "$createdAt" }
-          },
-          orders: { $sum: 1 },
-          revenue: { $sum: "$totalAmount" }
-        }
-      },
-      {
-        $sort: {
-          "_id.year": 1,
-          "_id.month": 1,
-          "_id.day": 1
-        }
+  const trends = await Order.aggregate([
+    {
+      $match: {
+        foodPartner: req.user._id,
+        status: "completed"
       }
-    ]);
+    },
+    {
+      $group: {
+        _id: {
+          year: { $year: "$createdAt" },
+          month: { $month: "$createdAt" },
+          day: { $dayOfMonth: "$createdAt" }
+        },
+        orders: { $sum: 1 },
+        revenue: { $sum: "$totalAmount" }
+      }
+    },
+    {
+      $sort: {
+        "_id.year": 1,
+        "_id.month": 1,
+        "_id.day": 1
+      }
+    }
+  ]);
 
-    res.json(trends);
-
-  } catch (err) {
-    console.error("Order trends error:", err);
-    res.status(500).json({ message: "Failed to fetch trends" });
-  }
+  return res.json(trends);
 }
-
-
 
 /* ====================== EXPORTS ====================== */
 module.exports = {
   createFood,
   getFoodItems,
+  getReels,
   getFoodPartnerDetails,
   likeFood,
   saveFood,

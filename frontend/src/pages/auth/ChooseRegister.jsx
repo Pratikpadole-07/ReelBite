@@ -1,26 +1,36 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import '../../styles/auth-shared.css';
+import React from "react";
+import { Link } from "react-router-dom";
+import "../../styles/choose-register.css";
 
 const ChooseRegister = () => {
   return (
-    <div className="auth-page-wrapper">
-      <div className="auth-card" role="region" aria-labelledby="choose-register-title">
-        <header>
-          <h1 id="choose-register-title" className="auth-title">Register</h1>
-          <p className="auth-subtitle">Pick how you want to join the platform.</p>
+    <div className="choose-page">
+      <div
+        className="choose-card"
+        role="region"
+        aria-labelledby="choose-register-title"
+      >
+        <header className="choose-header">
+          <h1 id="choose-register-title">Join ReelBite</h1>
+          <p>Select how you want to use the platform</p>
         </header>
-        <div style={{display:'flex', flexDirection:'column', gap:'16px'}}>
-          <Link to="/user/register" className="auth-submit" style={{textDecoration:'none'}}>
-            Register as normal user
+
+        <div className="role-options">
+          <Link to="/user/register" className="role-card primary">
+            <h2>User</h2>
+            <p>Discover food reels and order instantly</p>
           </Link>
-          <Link to="/food-partner/register" className="auth-submit" style={{textDecoration:'none', background:'var(--color-surface-alt)', color:'var(--color-text)', border:'1px solid var(--color-border)'}}>
-            Register as food partner
+
+          <Link to="/food-partner/register" className="role-card secondary">
+            <h2>Food Partner</h2>
+            <p>Upload food, receive orders, grow your business</p>
           </Link>
         </div>
-        <div className="auth-alt-action" style={{marginTop:'4px'}}>
-          Already have an account? <Link to="/login">Sign in</Link>
-        </div>
+
+        <footer className="choose-footer">
+          <span>Already registered?</span>
+          <Link to="/login">Sign in</Link>
+        </footer>
       </div>
     </div>
   );
