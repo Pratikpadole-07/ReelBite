@@ -174,8 +174,9 @@ async function likeFood(req, res) {
   await Like.create({ user: req.user._id, food: foodId });
   await Food.findByIdAndUpdate(foodId, { $inc: { likeCount: 1 } });
 
-  return res.json({ liked: true });
+  res.json({ liked: true });
 }
+
 
 /* ====================== SAVE ====================== */
 async function saveFood(req, res) {

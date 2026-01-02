@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "../../styles/reels.css";
 import ReelFeed from "../../components/ReelFeed";
-
+import api from "../../assets/api/api";
 const Home = () => {
   /* ================= FILTER STATE ================= */
   const [searchInput, setSearchInput] = useState("");
@@ -17,6 +17,21 @@ const Home = () => {
 
     return () => clearTimeout(timer);
   }, [searchInput]);
+  const handleLike = async (item) => {
+  try {
+    await api.post("/food/like", { foodId: item._id });
+  } catch (err) {
+    console.error("Like failed", err);
+  }
+};
+
+const handleSave = async (item) => {
+  try {
+    await api.post("/food/save", { foodId: item._id });
+  } catch (err) {
+    console.error("Save failed", err);
+  }
+};
 
   return (
     <>
@@ -68,6 +83,7 @@ const Home = () => {
         search={search}
         category={category}
         onlyFollowed={tab === "following"}
+        onSave={handleSave}
       />
     </>
   );

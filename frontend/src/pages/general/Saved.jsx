@@ -37,13 +37,15 @@ const Saved = () => {
   };
 
   return (
-    <ReelFeed
-      items={videos}
-      onSave={removeSaved}
-      emptyMessage="No saved videos yet."
-      isLoading={isLoading}
-    />
-  );
+  <ReelFeed
+    items={videos}
+    onSave={removeSaved}
+    emptyMessage="No saved videos yet."
+    isLoading={isLoading}
+    disableInfiniteScroll={true}   // ✅ THIS WAS MISSING
+  />
+);
+
 };
 
 export default Saved;

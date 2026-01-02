@@ -1,39 +1,36 @@
 import { createContext, useEffect, useState } from "react";
 import api from "../assets/api/api";
-import { jwtDecode } from "jwt-decode";
 
-
-export const AuthContext = createContext();
+export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [foodPartner, setFoodPartner] = useState(null);
   const [loading, setLoading] = useState(true);
 
-const fetchAuth = async () => {
-  setLoading(true);
+  const fetchAuth = async () => {
+    setLoading(true);
 
-  try {
-    const resPartner = await api.get("/auth/food-partner/me");
-    setFoodPartner(resPartner.data.foodPartner);
+    try {
+      const resPartner = await api.get("/auth/food-partner/me");
+      setFoodPartner(resPartner.data.foodPartner);
+      setUser(null);
+      setLoading(false);
+      return;
+    } catch {}
+
+    try {
+      const resUser = await api.get("/auth/user/me");
+      setUser(resUser.data.user);
+      setFoodPartner(null);
+      setLoading(false);
+      return;
+    } catch {}
+
     setUser(null);
-    setLoading(false);
-    return;
-  } catch {}
-
-  try {
-    const resUser = await api.get("/auth/user/me");
-    setUser(resUser.data.user);
     setFoodPartner(null);
     setLoading(false);
-    return;
-  } catch {}
-
-  setUser(null);
-  setFoodPartner(null);
-  setLoading(false);
-};
-
+  };
 
   useEffect(() => {
     fetchAuth();
@@ -56,13 +53,23 @@ const fetchAuth = async () => {
       if (user) await api.get("/auth/user/logout");
       if (foodPartner) await api.get("/auth/food-partner/logout");
     } catch {}
+
     setUser(null);
     setFoodPartner(null);
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, foodPartner, loading, loginUser, loginFoodPartner, logout }}
+      value={{
+        user,
+        setUser,
+        foodPartner,
+        setFoodPartner,
+        loading,
+        loginUser,
+        loginFoodPartner,
+        logout
+      }}
     >
       {children}
     </AuthContext.Provider>

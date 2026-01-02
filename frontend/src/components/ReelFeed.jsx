@@ -11,12 +11,13 @@ import CommentModal from "./CommentModal";
 import { AuthContext } from "../context/AuthContext";
 
 const ReelFeed = ({
+  items: externalItems,
   search = "",
   category = "All",
   onlyFollowed = false,
-  onLike = () => {},
-  onSave = () => {},
-  emptyMessage = "No reels."
+  emptyMessage = "No reels.",
+  isLoading = false,
+  disableInfiniteScroll = false
 }) => {
   const { user } = useContext(AuthContext);
 
@@ -28,6 +29,13 @@ const ReelFeed = ({
 
   const [activeCommentFoodId, setActiveCommentFoodId] = useState(null);
   const [placingOrderId, setPlacingOrderId] = useState(null);
+
+  /* ================= SYNC SAVED ITEMS ================= */
+  useEffect(() => {
+    if (disableInfiniteScroll) {
+      setItems(externalItems || []);
+    }
+  }, [externalItems, disableInfiniteScroll]);
 
   /* ================= VIDEO AUTOPLAY ================= */
   const videoRefs = useRef(new Map());
@@ -56,51 +64,38 @@ const ReelFeed = ({
     else videoRefs.current.set(id, el);
   };
 
+  /* ================= FETCH REELS (HOME ONLY) ================= */
+  const fetchReels = async () => {
+    if (disableInfiniteScroll || loading || !hasMore) return;
+
+    setLoading(true);
+    try {
+      const res = await api.get("/food/reels", {
+        params: {
+          cursor,
+          limit: 5,
+          search,
+          category,
+          onlyFollowed
+        }
+      });
+
+      const newReels = res.data.reels || [];
+      setItems(prev => [...prev, ...newReels]);
+      setCursor(res.data.nextCursor || null);
+      setHasMore(Boolean(res.data.nextCursor));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   /* ================= RESET ON FILTER CHANGE ================= */
-/* ================= RESET + FETCH ================= */
-useEffect(() => {
-  setItems([]);
-  setCursor(null);
-  setHasMore(true);
-
-  // force fresh fetch after reset
-  fetchReels(true);
-}, [search, category, onlyFollowed]);
-
-/* ================= FETCH REELS ================= */
-const fetchReels = async (isFresh = false) => {
-  if (loading || (!hasMore && !isFresh)) return;
-
-  setLoading(true);
-  try {
-    const res = await api.get("/food/reels", {
-      params: {
-        cursor: isFresh ? null : cursor,
-        limit: 5,
-        search,
-        category,
-        onlyFollowed
-      }
-    });
-
-    const newReels = res.data.reels || [];
-
-    setItems(prev =>
-      isFresh ? newReels : [...prev, ...newReels]
-    );
-
-    setCursor(res.data.nextCursor || null);
-    setHasMore(Boolean(res.data.nextCursor));
-  } catch (err) {
-    console.error("Failed to load reels", err);
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-  /* ================= FETCH WHEN FILTERS CHANGE ================= */
   useEffect(() => {
+    if (disableInfiniteScroll) return;
+
+    setItems([]);
+    setCursor(null);
+    setHasMore(true);
     fetchReels();
   }, [search, category, onlyFollowed]);
 
@@ -109,20 +104,69 @@ const fetchReels = async (isFresh = false) => {
 
   const lastReelRef = useCallback(
     node => {
-      if (loading || !hasMore) return;
+      if (disableInfiniteScroll || loading || !hasMore) return;
 
       if (observerRef.current) observerRef.current.disconnect();
 
       observerRef.current = new IntersectionObserver(entries => {
-        if (entries[0].isIntersecting) {
-          fetchReels();
-        }
+        if (entries[0].isIntersecting) fetchReels();
       });
 
       if (node) observerRef.current.observe(node);
     },
-    [loading, hasMore]
+    [loading, hasMore, disableInfiniteScroll]
   );
+
+  /* ================= LIKE ================= */
+  const handleLike = async foodId => {
+    const res = await api.post("/food/like", { foodId });
+
+    setItems(prev =>
+      prev.map(item =>
+        item._id === foodId
+          ? {
+              ...item,
+              likeCount: res.data.liked
+                ? item.likeCount + 1
+                : Math.max(0, item.likeCount - 1)
+            }
+          : item
+      )
+    );
+  };
+
+  /* ================= SAVE ================= */
+  const handleSave = async foodId => {
+    const res = await api.post("/food/save", { foodId });
+
+    setItems(prev =>
+      prev.map(item =>
+        item._id === foodId
+          ? {
+              ...item,
+              isSaved: res.data.saved,
+              savesCount: res.data.saved
+                ? item.savesCount + 1
+                : Math.max(0, item.savesCount - 1)
+            }
+          : item
+      )
+    );
+  };
+
+  /* ================= COMMENT COUNT ================= */
+  const incrementCommentCount = foodId => {
+    setItems(prev =>
+      prev.map(item =>
+        item._id === foodId
+          ? {
+              ...item,
+              commentsCount: (item.commentsCount || 0) + 1
+            }
+          : item
+      )
+    );
+  };
 
   /* ================= PLACE ORDER ================= */
   const placeOrder = async foodId => {
@@ -130,15 +174,13 @@ const fetchReels = async (isFresh = false) => {
       setPlacingOrderId(foodId);
       await api.post("/order", { foodId });
       alert("Order placed");
-    } catch {
-      alert("Failed to place order");
     } finally {
       setPlacingOrderId(null);
     }
   };
 
   /* ================= EMPTY ================= */
-  if (!items.length && !loading) {
+  if (!items.length && !loading && !isLoading) {
     return <div className="reel-page">{emptyMessage}</div>;
   }
 
@@ -152,7 +194,7 @@ const fetchReels = async (isFresh = false) => {
         return (
           <div
             key={item._id}
-            ref={isLast ? lastReelRef : null}
+            ref={!disableInfiniteScroll && isLast ? lastReelRef : null}
             className="reel-row"
           >
             <div className="reel-box">
@@ -168,16 +210,17 @@ const fetchReels = async (isFresh = false) => {
 
             <div className="right-panel">
               <div className="action-group">
-                <button onClick={() => onLike(item)}>❤️</button>
+                <button onClick={() => handleLike(item._id)}>❤️</button>
                 <span>{item.likeCount || 0}</span>
 
-                <button onClick={() => onSave(item)}>🔖</button>
+                <button onClick={() => handleSave(item._id)}>
+                  {item.isSaved ? "🔖" : "📑"}
+                </button>
                 <span>{item.savesCount || 0}</span>
 
                 <button onClick={() => setActiveCommentFoodId(item._id)}>
                   💬
                 </button>
-                <span>{item.commentsCount || 0}</span>
               </div>
 
               <div className="food-info">
@@ -216,12 +259,13 @@ const fetchReels = async (isFresh = false) => {
         );
       })}
 
-      {loading && <p className="loading-text">Loading more…</p>}
+      {(loading || isLoading) && <p className="loading-text">Loading…</p>}
 
       <CommentModal
         foodId={activeCommentFoodId}
         isOpen={!!activeCommentFoodId}
         onClose={() => setActiveCommentFoodId(null)}
+        onCommentAdded={incrementCommentCount}
       />
     </div>
   );

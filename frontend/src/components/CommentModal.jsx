@@ -2,7 +2,7 @@ import React, { useEffect, useState, useContext } from "react";
 import api from "../assets/api/api";
 import { AuthContext } from "../context/AuthContext";
 
-const CommentModal = ({ foodId, isOpen, onClose }) => {
+const CommentModal = ({ foodId, isOpen, onClose,onCommentAdded }) => {
   const { user } = useContext(AuthContext);
   const [comments, setComments] = useState([]);
   const [input, setInput] = useState("");
@@ -22,21 +22,26 @@ const CommentModal = ({ foodId, isOpen, onClose }) => {
     }
   };
 
-  const addComment = async () => {
-    if (!input.trim()) return;
-    setLoading(true);
-    try {
-      const res = await api.post(`/food/comment`, {
-        foodId,
-        text: input
-      });
-      setComments(prev => [res.data.comment, ...prev]);
-      setInput("");
-    } catch {
-      console.log("Add comment failed");
-    }
-    setLoading(false);
-  };
+const addComment = async () => {
+  if (!input.trim()) return;
+
+  setLoading(true);
+  try {
+    const res = await api.post("/food/comment", {
+      foodId,
+      text: input
+    });
+
+    setComments(prev => [res.data.comment, ...prev]);
+
+    onCommentAdded(foodId); // 🔥 THIS WAS MISSING
+
+    setInput("");
+  } catch {
+    console.log("Add comment failed");
+  }
+  setLoading(false);
+};
 
   const deleteComment = async (id) => {
     try {
